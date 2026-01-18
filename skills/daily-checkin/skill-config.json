@@ -1,0 +1,26 @@
+{
+  "skill_id": "oa-daily-checkin",
+  "skill_name": "OpenAnalyst Daily Check-in",
+  "version": "1.0.0",
+  "description": "OpenAnalyst Accountability Coach - Structured daily check-ins with progress tracking and adaptive questions",
+  "author": "OpenAnalyst",
+  "parent": "OpenAnalyst-Accountability-Coach",
+  "category": "accountability",
+  "tags": ["checkin", "daily", "progress", "accountability", "tracking"],
+  "triggers": [
+    "daily checkin",
+    "check in",
+    "how was your day",
+    "daily review"
+  ],
+  "config": {
+    "data_dir": "data/checkins",
+    "default_time": "21:00",
+    "reminder_enabled": true,
+    "streak_integration": true
+  },
+  "dependencies": [
+    "oa-streak",
+    "oa-user-onboarding"
+  ]
+}

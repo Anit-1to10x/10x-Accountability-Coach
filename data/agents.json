@@ -1,0 +1,29 @@
+{
+  "agents": [
+    {
+      "id": "accountability-coach",
+      "name": "Accountability Coach",
+      "description": "Your personal accountability partner who helps you stay on track with your goals",
+      "avatar": "coach",
+      "isDefault": true,
+      "skills": [
+        "streak",
+        "daily-checkin",
+        "smart-scheduler"
+      ],
+      "capabilities": [
+        "challenge-creation",
+        "daily-checkin",
+        "progress-tracking",
+        "motivation",
+        "planning"
+      ],
+      "personality": {
+        "tone": "encouraging",
+        "style": "supportive but honest"
+      }
+    }
+  ],
+  "globalSkills": [],
+  "lastUpdated": "2024-12-31T00:00:00.000Z"
+}

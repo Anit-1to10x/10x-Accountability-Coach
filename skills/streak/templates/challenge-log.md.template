@@ -1,0 +1,54 @@
+# {{CHALLENGE_NAME}} - Challenge Log
+
+> Tracking my journey since {{CREATED_DATE}}
+
+---
+
+## Log Entries
+
+<!-- New entries are added at the top -->
+
+### {{CURRENT_DATE}} - Day 1
+
+**Check-in Time**: {{TIMESTAMP}}
+**Streak**: 🔥 1 day
+**Mood**: {{MOOD}}
+**Energy**: {{ENERGY}}
+
+#### What I accomplished:
+- {{ACCOMPLISHMENT}}
+
+#### Key learnings:
+- {{LEARNING}}
+
+#### Tomorrow's focus:
+- {{NEXT_FOCUS}}
+
+#### Notes:
+{{NOTES}}
+
+---
+
+<!-- Template for future entries:
+
+### [DATE] - Day [N]
+
+**Check-in Time**: [TIME]
+**Streak**: 🔥 [N] days
+**Mood**: [😊/😐/😔]
+**Energy**: [High/Medium/Low]
+
+#### What I accomplished:
+-
+
+#### Key learnings:
+-
+
+#### Tomorrow's focus:
+-
+
+#### Notes:
+
+---
+
+-->

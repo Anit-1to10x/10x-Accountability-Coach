@@ -1,0 +1,38 @@
+{
+  "name": "openanalyst-ui",
+  "version": "2.0.0",
+  "description": "OpenAnalyst Accountability Coach - Next.js UI",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:mock": "NEXT_PUBLIC_MOCK_MODE=true next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "chokidar": "^3.5.3",
+    "clsx": "^2.0.0",
+    "date-fns": "^2.30.0",
+    "framer-motion": "^10.16.0",
+    "gray-matter": "^4.0.3",
+    "lucide-react": "^0.294.0",
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
+    "react-resizable-panels": "^4.0.15",
+    "tailwind-merge": "^2.1.0",
+    "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
+    "typescript": "^5.3.0"
+  }
+}

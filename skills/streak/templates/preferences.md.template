@@ -1,0 +1,38 @@
+# {{CHALLENGE_NAME}} - Preferences
+
+## Challenge Info
+- **Type**: {{CHALLENGE_TYPE}}
+- **Created**: {{CREATED_DATE}}
+- **Cadence**: {{CADENCE}}
+- **Goal**: {{GOAL}}
+
+## My Why
+<!-- Why is this challenge important to you? What will achieving it mean? -->
+{{WHY}}
+
+## Success Criteria
+<!-- How will you know when you've succeeded? Be specific. -->
+- [ ] {{SUCCESS_CRITERION_1}}
+- [ ] {{SUCCESS_CRITERION_2}}
+- [ ] {{SUCCESS_CRITERION_3}}
+
+## Commitment
+- **Time per session**: {{TIME_COMMITMENT}}
+- **Preferred time**: {{PREFERRED_TIME}}
+- **Minimum viable session**: {{MINIMUM_SESSION}}
+
+## Resources
+<!-- Links, books, courses, tools you're using -->
+- {{RESOURCE_1}}
+- {{RESOURCE_2}}
+
+## Milestones
+<!-- Break your goal into smaller milestones -->
+| Milestone | Target Date | Status |
+|-----------|-------------|--------|
+| {{MILESTONE_1}} | {{DATE_1}} | ⏳ |
+| {{MILESTONE_2}} | {{DATE_2}} | ⏳ |
+| {{MILESTONE_3}} | {{DATE_3}} | ⏳ |
+
+## Notes
+<!-- Any additional configuration or notes -->

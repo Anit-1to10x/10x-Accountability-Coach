@@ -1,0 +1,28 @@
+{
+  "skill_id": "oa-user-onboarding",
+  "skill_name": "OpenAnalyst User Onboarding",
+  "version": "1.0.0",
+  "description": "OpenAnalyst Accountability Coach - Chat-based onboarding to understand user profile, preferences, and availability",
+  "author": "OpenAnalyst",
+  "parent": "OpenAnalyst-Accountability-Coach",
+  "category": "onboarding",
+  "tags": ["onboarding", "profile", "setup", "preferences", "chat"],
+  "triggers": [
+    "new user",
+    "setup profile",
+    "onboarding",
+    "first time"
+  ],
+  "config": {
+    "data_dir": "data/profile",
+    "required_before_ui": true,
+    "min_questions": 5,
+    "max_questions": 10
+  },
+  "outputs": [
+    "profile.md",
+    "preferences.md",
+    "availability.md",
+    "motivation-triggers.md"
+  ]
+}

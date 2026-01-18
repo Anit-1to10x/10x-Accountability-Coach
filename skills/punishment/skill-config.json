@@ -1,0 +1,33 @@
+{
+  "skill_id": "oa-punishment",
+  "skill_name": "OpenAnalyst Commitment Contracts",
+  "version": "1.0.0",
+  "description": "OpenAnalyst Accountability Coach - StickK/Beeminder-inspired commitment contracts with custom punishments and referee system",
+  "author": "OpenAnalyst",
+  "parent": "OpenAnalyst-Accountability-Coach",
+  "category": "accountability",
+  "tags": ["punishment", "commitment", "contract", "stakes", "accountability"],
+  "triggers": [
+    "set punishment",
+    "commitment contract",
+    "add stakes",
+    "if I fail"
+  ],
+  "config": {
+    "data_dir": "data/contracts",
+    "require_referee": true,
+    "escalating_stakes": true,
+    "anti_charity_enabled": true,
+    "grace_period_hours": 24
+  },
+  "integrations": [
+    "venmo",
+    "paypal",
+    "email",
+    "sms"
+  ],
+  "dependencies": [
+    "oa-user-onboarding",
+    "oa-streak"
+  ]
+}

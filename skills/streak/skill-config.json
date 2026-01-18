@@ -1,0 +1,42 @@
+{
+  "skill_id": "oa-streak",
+  "skill_name": "OpenAnalyst Streak - Universal Challenge Tracker",
+  "version": "1.0.0",
+  "description": "OpenAnalyst Accountability Coach - Universal challenge tracker with flexible cadence, intelligent insights, and cross-challenge learning detection",
+  "author": "OpenAnalyst",
+  "parent": "OpenAnalyst-Accountability-Coach",
+  "category": "accountability",
+  "tags": ["streak", "challenge", "habits", "learning", "accountability", "tracking"],
+  "triggers": [
+    "track challenge",
+    "check in",
+    "log progress",
+    "streak",
+    "accountability"
+  ],
+  "structure": {
+    "requires_files": [
+      "preferences.md",
+      "challenge-log.md",
+      "backlog.md",
+      "today.md"
+    ],
+    "optional_files": [
+      "vision-board.md",
+      "milestones.md"
+    ]
+  },
+  "config": {
+    "data_dir": "data/challenges",
+    "default_cadence": "daily",
+    "supported_types": [
+      "learning",
+      "building",
+      "fitness",
+      "habit",
+      "creative",
+      "custom"
+    ],
+    "streak_grace_period_hours": 36
+  }
+}

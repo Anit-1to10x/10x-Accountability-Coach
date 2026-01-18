@@ -1,0 +1,21 @@
+{
+  "skill_id": "oa-excalidraw",
+  "skill_name": "OpenAnalyst Excalidraw - Architecture Diagram Generator",
+  "version": "1.0.0",
+  "description": "OpenAnalyst Accountability Coach - Generate architecture diagrams as .excalidraw files from codebase analysis",
+  "author": "OpenAnalyst",
+  "parent": "OpenAnalyst-Accountability-Coach",
+  "category": "visualization",
+  "tags": ["diagram", "architecture", "excalidraw", "visualization"],
+  "triggers": [
+    "create architecture diagram",
+    "visualize codebase",
+    "generate excalidraw",
+    "system diagram"
+  ],
+  "config": {
+    "output_dir": "data/diagrams",
+    "default_theme": "light",
+    "include_legend": true
+  }
+}

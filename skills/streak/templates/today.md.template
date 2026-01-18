@@ -1,0 +1,61 @@
+# {{CHALLENGE_NAME}} - Today
+
+> {{CURRENT_DATE}} | Day {{DAY_NUMBER}} | 🔥 {{STREAK_COUNT}} day streak
+
+---
+
+## Today's Focus
+
+### Primary Goal
+<!-- The ONE thing that matters most today -->
+**{{PRIMARY_GOAL}}**
+
+### Tasks
+- [ ] {{TASK_1}}
+- [ ] {{TASK_2}}
+- [ ] {{TASK_3}}
+
+---
+
+## Session Plan
+
+**Planned Duration**: {{PLANNED_DURATION}}
+**Start Time**: {{START_TIME}}
+
+### Warm-up (5 min)
+- Review yesterday's notes
+- Set intention for today
+
+### Main Work ({{MAIN_DURATION}})
+- {{MAIN_WORK_ITEM}}
+
+### Cool-down (5 min)
+- Log progress
+- Update tomorrow's focus
+
+---
+
+## Quick Notes
+<!-- Jot things down during your session -->
+
+
+---
+
+## End of Day Review
+
+**Completed**: ⏳ Not yet
+**Time Spent**: --
+**Satisfaction**: --/5
+
+### What went well:
+-
+
+### What could improve:
+-
+
+### Tomorrow's priority:
+-
+
+---
+
+*Updated: {{LAST_UPDATED}}*

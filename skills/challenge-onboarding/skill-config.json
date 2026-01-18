@@ -1,0 +1,34 @@
+{
+  "skill_id": "oa-challenge-onboarding",
+  "skill_name": "OpenAnalyst Challenge Onboarding",
+  "version": "1.0.0",
+  "description": "OpenAnalyst Accountability Coach - Dynamic chat-based onboarding for creating new challenges with AI-generated questions",
+  "author": "OpenAnalyst",
+  "parent": "OpenAnalyst-Accountability-Coach",
+  "category": "onboarding",
+  "tags": ["challenge", "onboarding", "goal-setting", "planning", "dynamic"],
+  "triggers": [
+    "create challenge",
+    "new challenge",
+    "start goal",
+    "new goal"
+  ],
+  "config": {
+    "data_dir": "data/challenges",
+    "min_questions": 5,
+    "max_questions": 8,
+    "commitment_score_threshold": 8,
+    "auto_generate_todos": true,
+    "requires_punishment_setup": true
+  },
+  "outputs": [
+    "challenge-config.json",
+    "schedule.md",
+    "milestones.md",
+    "commitment-contract.json"
+  ],
+  "dependencies": [
+    "oa-user-onboarding",
+    "oa-punishment"
+  ]
+}
