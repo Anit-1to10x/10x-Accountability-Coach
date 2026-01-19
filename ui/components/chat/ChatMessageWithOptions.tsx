@@ -1,8 +1,18 @@
 'use client'
 
 import React from 'react'
+import { Lightbulb, ExternalLink } from 'lucide-react'
 import type { ChatMessage } from '@/types/chat'
 import QuickOptions from './QuickOptions'
+
+interface ApiSuggestion {
+  taskType: string
+  suggestedApi: string
+  configured: boolean
+  message: string
+  configUrl: string
+  envKey: string
+}
 
 interface ChatMessageWithOptionsProps {
   message: ChatMessage
@@ -15,6 +25,7 @@ export function ChatMessageWithOptions({
 }: ChatMessageWithOptionsProps) {
   const { metadata, role, content, attachments } = message
   const isStreaming = metadata?.isStreaming
+  const apiSuggestion = metadata?.apiSuggestion as ApiSuggestion | undefined
 
   return (
     <div
@@ -27,6 +38,29 @@ export function ChatMessageWithOptions({
             : 'bg-oa-bg-secondary border border-oa-border text-oa-text-primary rounded-bl-sm'
         }`}
       >
+        {/* API Suggestion Banner */}
+        {role === 'assistant' && apiSuggestion && !apiSuggestion.configured && (
+          <div className="mb-3 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+            <div className="flex items-start gap-2">
+              <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs text-amber-300 leading-relaxed">
+                  {apiSuggestion.message}
+                </p>
+                <a
+                  href={apiSuggestion.configUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 mt-1.5 text-xs text-amber-400 hover:text-amber-300 transition-colors"
+                >
+                  Get {apiSuggestion.suggestedApi} API Key
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Show generating message if streaming and empty */}
         {isStreaming && !content && (
           <div className="flex items-center gap-2 text-xs text-oa-text-secondary">

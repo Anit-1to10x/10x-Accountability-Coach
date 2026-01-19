@@ -19,6 +19,148 @@ function generateUserId(email: string): string {
   return email.toLowerCase().replace(/[^a-z0-9]/g, '-')
 }
 
+/**
+ * GET: Read all onboarding data for a profile
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+
+    if (!profileId) {
+      return NextResponse.json({ error: 'Profile ID required' }, { status: 400 })
+    }
+
+    const profilePaths = getProfilePaths(profileId)
+    const profileDir = profilePaths.profile
+
+    // Initialize response object
+    const onboardingData: Record<string, any> = {
+      profileId,
+      name: null,
+      email: null,
+      timezone: null,
+      productiveTime: null,
+      dailyHours: null,
+      accountabilityStyle: null,
+      bigGoal: null,
+      motivation: null,
+      createdAt: null,
+      completedAt: null,
+      persona: null,
+      resolution: null,
+      available_slots: [],
+      daily_hours: null,
+      preferences: {},
+    }
+
+    // Read profile.md
+    try {
+      const profileContent = await fs.readFile(path.join(profileDir, 'profile.md'), 'utf-8')
+
+      const nameMatch = profileContent.match(/\*\*Name:\*\*\s*(.+)/i)
+      const emailMatch = profileContent.match(/\*\*Email:\*\*\s*(.+)/i)
+      const timezoneMatch = profileContent.match(/\*\*Timezone:\*\*\s*(.+)/i)
+      const createdMatch = profileContent.match(/\*\*Created:\*\*\s*(.+)/i)
+      const onboardingMatch = profileContent.match(/\*\*Onboarding Completed:\*\*\s*(.+)/i)
+      const bigGoalMatch = profileContent.match(/Big goal:\s*(.+)/i)
+
+      onboardingData.name = nameMatch ? nameMatch[1].trim() : null
+      onboardingData.email = emailMatch ? emailMatch[1].trim() : null
+      onboardingData.timezone = timezoneMatch ? timezoneMatch[1].trim() : null
+      onboardingData.createdAt = createdMatch ? createdMatch[1].trim() : null
+      onboardingData.bigGoal = bigGoalMatch ? bigGoalMatch[1].trim() : null
+
+      if (onboardingMatch && onboardingMatch[1].trim().toLowerCase() === 'true') {
+        onboardingData.completedAt = onboardingData.createdAt
+      }
+    } catch {
+      // profile.md doesn't exist
+    }
+
+    // Read availability.md
+    try {
+      const availContent = await fs.readFile(path.join(profileDir, 'availability.md'), 'utf-8')
+
+      const peakHoursMatch = availContent.match(/\*\*Peak Hours:\*\*\s*(.+)/i)
+      const dailyCapacityMatch = availContent.match(/\*\*Daily Capacity:\*\*\s*(.+)/i)
+
+      onboardingData.productiveTime = peakHoursMatch ? peakHoursMatch[1].trim() : null
+      onboardingData.dailyHours = dailyCapacityMatch ? dailyCapacityMatch[1].trim() : null
+      onboardingData.daily_hours = dailyCapacityMatch ? dailyCapacityMatch[1].trim() : null
+
+      // Parse weekly schedule
+      const scheduleMatch = availContent.match(/## Weekly Schedule\n\|([\s\S]+?)(?:\n\n|$)/)
+      if (scheduleMatch) {
+        const rows = scheduleMatch[1].split('\n').filter(row => row.includes('|'))
+        const availableDays: string[] = []
+        rows.forEach(row => {
+          const cells = row.split('|').map(c => c.trim()).filter(c => c)
+          if (cells.length >= 2 && cells[1].toLowerCase() === 'yes') {
+            availableDays.push(cells[0])
+          }
+        })
+        onboardingData.availableDays = availableDays
+      }
+    } catch {
+      // availability.md doesn't exist
+    }
+
+    // Read preferences.md
+    try {
+      const prefsContent = await fs.readFile(path.join(profileDir, 'preferences.md'), 'utf-8')
+
+      const styleMatch = prefsContent.match(/\*\*Type:\*\*\s*(.+)/i)
+      const frequencyMatch = prefsContent.match(/\*\*Check-in Frequency:\*\*\s*(.+)/i)
+      const reminderToneMatch = prefsContent.match(/\*\*Reminder Tone:\*\*\s*(.+)/i)
+      const dailyCheckinMatch = prefsContent.match(/\*\*Daily Check-in:\*\*\s*(.+)/i)
+      const streakAlertsMatch = prefsContent.match(/\*\*Streak Alerts:\*\*\s*(.+)/i)
+
+      onboardingData.accountabilityStyle = styleMatch ? styleMatch[1].trim() : null
+      onboardingData.persona = styleMatch ? styleMatch[1].trim().toLowerCase() : null
+
+      onboardingData.preferences = {
+        checkInFrequency: frequencyMatch ? frequencyMatch[1].trim() : 'Daily',
+        reminderTone: reminderToneMatch ? reminderToneMatch[1].trim() : null,
+        dailyCheckinTime: dailyCheckinMatch ? dailyCheckinMatch[1].trim() : null,
+        streakAlerts: streakAlertsMatch ? streakAlertsMatch[1].trim().toLowerCase() === 'enabled' : true,
+      }
+    } catch {
+      // preferences.md doesn't exist
+    }
+
+    // Read motivation-triggers.md
+    try {
+      const motivationContent = await fs.readFile(path.join(profileDir, 'motivation-triggers.md'), 'utf-8')
+
+      const whatWorksMatch = motivationContent.match(/## What Works\n-\s*(.+)/i)
+      const currentGoalMatch = motivationContent.match(/## Current Big Goal\n(.+)/i)
+
+      onboardingData.motivation = whatWorksMatch ? whatWorksMatch[1].trim() : null
+      if (!onboardingData.bigGoal && currentGoalMatch) {
+        onboardingData.bigGoal = currentGoalMatch[1].trim()
+      }
+    } catch {
+      // motivation-triggers.md doesn't exist
+    }
+
+    // Read resolution.md if exists
+    try {
+      const resolutionContent = await fs.readFile(path.join(profileDir, 'resolution.md'), 'utf-8')
+
+      const resolutionMatch = resolutionContent.match(/## Resolution\n(.+)/i)
+      onboardingData.resolution = resolutionMatch ? resolutionMatch[1].trim() : null
+    } catch {
+      // resolution.md doesn't exist
+    }
+
+    return NextResponse.json(onboardingData)
+  } catch (error) {
+    console.error('Error reading onboarding data:', error)
+    return NextResponse.json({ error: 'Failed to read onboarding data' }, { status: 500 })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const data: OnboardingData = await request.json()

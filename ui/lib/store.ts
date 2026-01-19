@@ -250,6 +250,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 // Stream started
                 break
 
+              case 'api_suggestion':
+                // Show API suggestion to user (configured or not)
+                if (data.suggestion && !data.suggestion.configured) {
+                  // Prepend suggestion tip to the response
+                  get().updateMessage(agentId, streamingMessageId, {
+                    metadata: {
+                      isStreaming: true,
+                      apiSuggestion: data.suggestion,
+                    },
+                  })
+                }
+                break
+
               case 'chunk':
                 if (data.content) {
                   fullContent += data.content

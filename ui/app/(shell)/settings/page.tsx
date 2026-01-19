@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense, lazy } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Clock, Shield, FileText, Download, Trash2, ChevronDown, ChevronRight, Edit2, HelpCircle, BookOpen, Zap, CheckCircle, XCircle, Database, Server, Loader2 } from 'lucide-react'
+import { User, Users, Clock, Shield, FileText, Download, Trash2, ChevronDown, ChevronRight, Edit2, HelpCircle, BookOpen, Zap, CheckCircle, XCircle, Database, Server, Loader2, Check } from 'lucide-react'
 
 // Lazy load heavy components
 const DataSourceToggle = lazy(() => import('@/components/settings/DataSourceToggle').then(mod => ({ default: mod.DataSourceToggle })))
@@ -32,6 +32,8 @@ export default function SettingsPage() {
   const [onboardingData, setOnboardingData] = useState<any>(null)
   const [availability, setAvailability] = useState<any>(null)
   const [contracts, setContracts] = useState<any[]>([])
+  const [allProfiles, setAllProfiles] = useState<any[]>([])
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(null)
   const [preferences, setPreferences] = useState({
     accountabilityStyle: '',
     notifications: true,
@@ -53,7 +55,8 @@ export default function SettingsPage() {
     dataStorage: false,
     mcp: false,
     profile: true,
-    onboarding: false,
+    profiles: false,
+    onboarding: true,
     availability: false,
     contracts: false,
     preferences: false,
@@ -77,10 +80,11 @@ export default function SettingsPage() {
       }
 
       // Get active profile ID from localStorage
-      const activeProfileId = typeof window !== 'undefined' ? localStorage.getItem('activeProfileId') : null
+      const currentProfileId = typeof window !== 'undefined' ? localStorage.getItem('activeProfileId') : null
+      setActiveProfileId(currentProfileId)
 
       // Load profile using status API with profileId
-      const profileRes = await fetch(`/api/user/status${activeProfileId ? `?profileId=${activeProfileId}` : ''}`)
+      const profileRes = await fetch(`/api/user/status${currentProfileId ? `?profileId=${currentProfileId}` : ''}`)
       const profileData = await profileRes.json()
       if (profileData.user) {
         setProfile({
@@ -91,15 +95,26 @@ export default function SettingsPage() {
         })
       }
 
-      // Load onboarding data
-      const onboardingRes = await fetch('/api/user/onboarding')
-      const onboardingData = await onboardingRes.json()
-      setOnboardingData(onboardingData)
+      // Load onboarding data with profileId
+      if (currentProfileId) {
+        const onboardingRes = await fetch(`/api/user/onboarding?profileId=${currentProfileId}`)
+        const onboardingDataRes = await onboardingRes.json()
+        setOnboardingData(onboardingDataRes)
+      }
 
-      // Load availability
-      const availRes = await fetch('/api/user/availability')
+      // Load availability with profileId
+      const availRes = await fetch(`/api/user/availability${currentProfileId ? `?profileId=${currentProfileId}` : ''}`)
       const availData = await availRes.json()
       setAvailability(availData)
+
+      // Load all profiles
+      try {
+        const profilesRes = await fetch('/api/profiles')
+        const profilesData = await profilesRes.json()
+        setAllProfiles(profilesData.profiles || [])
+      } catch (err) {
+        console.error('Failed to load profiles:', err)
+      }
 
       // Load contracts
       const contractsRes = await fetch('/api/contracts')
@@ -453,45 +468,164 @@ PERPLEXITY_API_KEY=xxx`}
           </div>
         </Section>
 
+        {/* All Profiles Section */}
+        <Section
+          title="All Profiles"
+          subtitle="View and switch between all available profiles"
+          icon={<Users className="w-5 h-5" />}
+          isExpanded={expandedSections.profiles}
+          onToggle={() => toggleSection('profiles')}
+        >
+          {allProfiles.length > 0 ? (
+            <div className="space-y-3">
+              {allProfiles.map((p) => (
+                <div
+                  key={p.id}
+                  className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
+                    activeProfileId === p.id
+                      ? 'bg-oa-accent/10 border-oa-accent'
+                      : 'bg-oa-bg-tertiary border-oa-border hover:border-oa-text-secondary'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      activeProfileId === p.id ? 'bg-oa-accent' : 'bg-oa-bg-secondary'
+                    }`}>
+                      <User className={`w-5 h-5 ${activeProfileId === p.id ? 'text-white' : 'text-oa-text-secondary'}`} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-medium text-oa-text-primary">{p.name}</h4>
+                        {p.owner && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400">Owner</span>
+                        )}
+                        {activeProfileId === p.id && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-500">Active</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-oa-text-secondary">{p.email}</p>
+                      <p className="text-xs text-oa-text-secondary mt-0.5">Created: {p.created || 'Unknown'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {activeProfileId === p.id ? (
+                      <div className="flex items-center gap-1.5 text-green-500">
+                        <Check className="w-4 h-4" />
+                        <span className="text-xs">Current</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          localStorage.setItem('activeProfileId', p.id)
+                          window.location.reload()
+                        }}
+                        className="px-4 py-1.5 text-xs bg-oa-accent text-white rounded-lg hover:bg-oa-accent-hover transition-colors"
+                      >
+                        Switch
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-sm text-oa-text-secondary mb-4">No profiles found</p>
+              <button
+                onClick={() => window.location.href = '/onboarding'}
+                className="px-4 py-2 bg-oa-accent text-white rounded-lg hover:bg-oa-accent-hover transition-colors"
+              >
+                Create Your First Profile
+              </button>
+            </div>
+          )}
+        </Section>
+
         {/* Onboarding Data (Read-only) */}
         <Section
           title="Onboarding Data"
-          subtitle="Information you provided during initial setup (read-only)"
+          subtitle="Information you provided during initial setup"
           icon={<FileText className="w-5 h-5" />}
           isExpanded={expandedSections.onboarding}
           onToggle={() => toggleSection('onboarding')}
         >
-          {onboardingData ? (
-            <div className="space-y-3">
-              <DataField label="Persona" value={onboardingData.persona || 'Not set'} />
-              <DataField label="New Year Resolution" value={onboardingData.resolution || 'Not set'} />
-              <DataField label="Daily Hours Available" value={onboardingData.daily_hours || 'Not set'} />
-              <DataField
-                label="Preferred Time Slots"
-                value={
-                  Array.isArray(onboardingData.available_slots)
-                    ? onboardingData.available_slots.join(', ')
-                    : 'Not set'
-                }
-              />
-              <DataField
-                label="Onboarding Completed"
-                value={
-                  onboardingData.completedAt
-                    ? new Date(onboardingData.completedAt).toLocaleString()
-                    : 'Not completed'
-                }
-              />
-              <button
-                onClick={() => alert('Edit via chat: Ask your accountability coach to update your preferences')}
-                className="flex items-center gap-2 text-sm text-oa-accent hover:text-oa-accent-hover mt-4"
-              >
-                <Edit2 className="w-4 h-4" />
-                Request Changes (via Claude Code)
-              </button>
+          {onboardingData && !onboardingData.error ? (
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div>
+                <h4 className="text-sm font-semibold text-oa-text-primary mb-3">Profile Information</h4>
+                <div className="space-y-2 bg-oa-bg-tertiary p-4 rounded-lg">
+                  <DataField label="Name" value={onboardingData.name || 'Not set'} />
+                  <DataField label="Email" value={onboardingData.email || 'Not set'} />
+                  <DataField label="Timezone" value={onboardingData.timezone || 'Not set'} />
+                  <DataField label="Profile ID" value={onboardingData.profileId || 'Not set'} />
+                  <DataField label="Created" value={onboardingData.createdAt || 'Not set'} />
+                </div>
+              </div>
+
+              {/* Goals & Motivation */}
+              <div>
+                <h4 className="text-sm font-semibold text-oa-text-primary mb-3">Goals & Motivation</h4>
+                <div className="space-y-2 bg-oa-bg-tertiary p-4 rounded-lg">
+                  <DataField label="Big Goal" value={onboardingData.bigGoal || 'Not set'} />
+                  <DataField label="New Year Resolution" value={onboardingData.resolution || 'Not set'} />
+                  <DataField label="Motivation Style" value={onboardingData.motivation || 'Not set'} />
+                </div>
+              </div>
+
+              {/* Schedule & Availability */}
+              <div>
+                <h4 className="text-sm font-semibold text-oa-text-primary mb-3">Schedule & Availability</h4>
+                <div className="space-y-2 bg-oa-bg-tertiary p-4 rounded-lg">
+                  <DataField label="Productive Time" value={onboardingData.productiveTime || 'Not set'} />
+                  <DataField label="Daily Hours Available" value={onboardingData.dailyHours || onboardingData.daily_hours || 'Not set'} />
+                  <DataField
+                    label="Available Days"
+                    value={
+                      Array.isArray(onboardingData.availableDays) && onboardingData.availableDays.length > 0
+                        ? onboardingData.availableDays.join(', ')
+                        : 'All days'
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Preferences */}
+              <div>
+                <h4 className="text-sm font-semibold text-oa-text-primary mb-3">Accountability Preferences</h4>
+                <div className="space-y-2 bg-oa-bg-tertiary p-4 rounded-lg">
+                  <DataField label="Accountability Style" value={onboardingData.accountabilityStyle || onboardingData.persona || 'Not set'} />
+                  {onboardingData.preferences && (
+                    <>
+                      <DataField label="Check-in Frequency" value={onboardingData.preferences.checkInFrequency || 'Daily'} />
+                      <DataField label="Reminder Tone" value={onboardingData.preferences.reminderTone || 'Not set'} />
+                      <DataField label="Daily Check-in Time" value={onboardingData.preferences.dailyCheckinTime || 'Not set'} />
+                      <DataField label="Streak Alerts" value={onboardingData.preferences.streakAlerts ? 'Enabled' : 'Disabled'} />
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={() => window.location.href = '/onboarding'}
+                  className="flex items-center gap-2 text-sm text-oa-accent hover:text-oa-accent-hover"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Re-run Onboarding
+                </button>
+              </div>
             </div>
           ) : (
-            <p className="text-sm text-oa-text-secondary">No onboarding data found</p>
+            <div className="text-center py-6">
+              <p className="text-sm text-oa-text-secondary mb-4">No onboarding data found for this profile</p>
+              <button
+                onClick={() => window.location.href = '/onboarding'}
+                className="px-4 py-2 bg-oa-accent text-white rounded-lg hover:bg-oa-accent-hover transition-colors"
+              >
+                Complete Onboarding
+              </button>
+            </div>
           )}
         </Section>
 
