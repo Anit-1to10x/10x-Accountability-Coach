@@ -3,11 +3,18 @@
  *
  * Builds rich context from user data for AI system prompts.
  * Provides all necessary information for personalized AI responses.
+ * Integrates with prompt indexer for dynamic prompt selection.
  */
 
 import fs from 'fs/promises';
 import path from 'path';
 import { DATA_DIR, PATHS, getProfilePaths } from '../paths';
+import {
+  matchPrompts,
+  renderPromptTemplate,
+  PromptMatchResult,
+  PromptContent,
+} from './prompt-indexer';
 
 export interface UserProfile {
   id: string;
@@ -670,4 +677,143 @@ export function formatContextSummary(context: UserContext): string {
   const streak = context.progress?.streaks?.[0]?.streak || 0;
 
   return `${userName}: ${challengeCount} challenges, ${pendingTasks} pending tasks, ${streak} day streak`;
+}
+
+/**
+ * Build an optimized system prompt using dynamic prompt matching
+ * @param context - User context from buildContext()
+ * @param userMessage - The user's message to match prompts against
+ * @param agentId - Agent ID for filtering
+ * @param matchedSkill - Optional skill content
+ * @returns Enhanced system prompt with matched prompts
+ */
+export async function buildEnhancedSystemPrompt(
+  context: UserContext,
+  userMessage: string,
+  agentId: string = 'unified',
+  matchedSkill?: { name: string; body: string } | null
+): Promise<{ systemPrompt: string; matchedPrompts: PromptMatchResult }> {
+  // Match prompts to user message
+  const matchedPrompts = await matchPrompts(userMessage);
+
+  // Prepare template context for rendering
+  const templateContext = {
+    name: context.profile?.name || 'User',
+    today_date: context.currentDate,
+    active_challenges: String(context.challenges?.count || 0),
+    pending_tasks: String(context.tasks?.summary?.pending || 0),
+    completed_tasks: String(context.tasks?.summary?.completedToday || 0),
+    current_streak: String(context.progress?.streaks?.[0]?.streak || 0),
+    daily_hours: '8', // Default, could be from user preferences
+  };
+
+  // Build the system prompt
+  const userName = context.profile?.name || 'User';
+  const challengeCount = context.challenges?.count || 0;
+  const pendingTasks = context.tasks?.summary?.pending || 0;
+  const completedTasks = context.tasks?.summary?.completedToday || 0;
+  const currentStreak = context.progress?.streaks?.[0]?.streak || 0;
+  const currentDate = context.currentDate || new Date().toISOString().split('T')[0];
+
+  // Start with core identity
+  let systemPrompt = `You are the 10X Coach, a personal accountability coach by Team 10X. Today is ${currentDate}.
+
+## User Context
+- **Name:** ${userName}
+- **Active Challenges:** ${challengeCount}
+- **Pending Tasks:** ${pendingTasks}
+- **Completed Today:** ${completedTasks}
+- **Current Streak:** ${currentStreak} days
+
+`;
+
+  // Add matched prompt's framework/guidance if available
+  if (matchedPrompts.primary && matchedPrompts.primary.score > 5) {
+    const renderedTemplate = renderPromptTemplate(
+      matchedPrompts.primary.prompt.template,
+      templateContext
+    );
+
+    systemPrompt += `## Active Framework: ${matchedPrompts.primary.prompt.name}
+${renderedTemplate}
+
+`;
+  }
+
+  // Add system prompt guidance for complex reasoning
+  if (matchedPrompts.systemPrompt) {
+    systemPrompt += `## Reasoning Protocol
+${matchedPrompts.systemPrompt.template}
+
+`;
+  }
+
+  // Add skill instructions if matched
+  if (matchedSkill) {
+    systemPrompt += `## Active Skill: ${matchedSkill.name}
+${matchedSkill.body}
+
+`;
+  }
+
+  // Add condensed task list
+  if (context.tasks?.todos?.length > 0) {
+    const taskList = context.tasks.todos
+      .slice(0, 5)
+      .map((t, i) => `${i + 1}. [${t.completed ? 'x' : ' '}] ${t.text || t.title}`)
+      .join('\n');
+    systemPrompt += `## Today's Tasks
+${taskList}
+
+`;
+  }
+
+  // Add challenge info if relevant
+  const needsChallengeContext = matchedPrompts.contextRequirements.some(
+    r => r.type === 'challenges' && r.required
+  );
+  if (needsChallengeContext && context.challenges?.data?.length > 0) {
+    const challengeList = context.challenges.data
+      .slice(0, 3)
+      .map(c => `- ${c.name}: ${c.streak?.current || 0} day streak`)
+      .join('\n');
+    systemPrompt += `## Challenges
+${challengeList}
+
+`;
+  }
+
+  // Add concise coaching guidelines
+  systemPrompt += `## Guidelines
+- Reference user's actual data
+- Be encouraging but honest
+- Keep responses concise and actionable
+- Use ${matchedPrompts.primary?.prompt.name || 'coaching'} framework when applicable`;
+
+  return { systemPrompt, matchedPrompts };
+}
+
+/**
+ * Get a compact context string for token optimization
+ * @param context - User context from buildContext()
+ * @returns Compact context string
+ */
+export function getCompactContext(context: UserContext): string {
+  const parts: string[] = [];
+
+  if (context.profile?.name) {
+    parts.push(`User: ${context.profile.name}`);
+  }
+
+  if (context.challenges?.count) {
+    parts.push(`${context.challenges.count} challenges`);
+    const streak = context.progress?.streaks?.[0]?.streak;
+    if (streak) parts.push(`${streak}d streak`);
+  }
+
+  if (context.tasks?.summary?.pending) {
+    parts.push(`${context.tasks.summary.pending} pending tasks`);
+  }
+
+  return parts.join(' | ');
 }

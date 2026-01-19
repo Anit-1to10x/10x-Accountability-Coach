@@ -2,12 +2,12 @@
  * Streaming Chat API Route
  *
  * Provides streaming chat responses using the OpenAnalyst API.
- * Replaces the WebSocket-based Claude Code CLI architecture.
+ * Features dynamic prompt matching for optimized, context-aware responses.
  */
 
 import { NextRequest } from 'next/server';
 import { chatStream, createSSETextStream } from '@/lib/api/openanalyst-client';
-import { buildContext, buildSystemPrompt } from '@/lib/api/context-builder';
+import { buildContext, buildSystemPrompt, buildEnhancedSystemPrompt } from '@/lib/api/context-builder';
 import { matchSkill } from '@/lib/api/skills-manager';
 
 export const runtime = 'nodejs';
@@ -120,14 +120,20 @@ export async function POST(request: NextRequest) {
     const skill = await matchSkill(content, agentId || 'unified');
     const matchedSkill = skill ? { name: skill.name, body: skill.body } : null;
 
-    // 4. Build system prompt with context + skill
-    // If API suggestion exists but not configured, add a note to the system prompt
-    let additionalContext = '';
-    if (apiSuggestion && !apiSuggestion.configured) {
-      additionalContext = `\n\nNote: The user is asking about ${apiSuggestion.type.replace('_', ' ')}. The ${apiSuggestion.suggestedApi} API is not configured, so provide the best response possible with available information, but mention that results could be improved by configuring the ${apiSuggestion.suggestedApi} API.`;
-    }
+    // 4. Build enhanced system prompt with dynamic prompt matching
+    // This selects the best prompts based on user's message content
+    const { systemPrompt: enhancedPrompt, matchedPrompts } = await buildEnhancedSystemPrompt(
+      context,
+      content,
+      agentId || 'unified',
+      matchedSkill
+    );
 
-    const systemPrompt = buildSystemPrompt(context, agentId || 'unified', matchedSkill) + additionalContext;
+    // Add API suggestion note if applicable
+    let systemPrompt = enhancedPrompt;
+    if (apiSuggestion && !apiSuggestion.configured) {
+      systemPrompt += `\n\nNote: The user is asking about ${apiSuggestion.type.replace('_', ' ')}. The ${apiSuggestion.suggestedApi} API is not configured, so provide the best response possible with available information, but mention that results could be improved by configuring the ${apiSuggestion.suggestedApi} API.`;
+    }
 
     // 5. Call OpenAnalyst API with streaming
     const apiStream = await chatStream(
@@ -170,6 +176,18 @@ export async function POST(request: NextRequest) {
               skillName: matchedSkill.name,
             })}\n\n`;
             controller.enqueue(encoder.encode(skillEvent));
+          }
+
+          // Send prompt match info if a prompt was matched
+          if (matchedPrompts.primary && matchedPrompts.primary.score > 5) {
+            const promptEvent = `data: ${JSON.stringify({
+              type: 'prompt_match',
+              promptName: matchedPrompts.primary.prompt.name,
+              promptCategory: matchedPrompts.primary.prompt.category,
+              score: matchedPrompts.primary.score,
+              reasoning: matchedPrompts.primary.prompt.reasoning || 'standard',
+            })}\n\n`;
+            controller.enqueue(encoder.encode(promptEvent));
           }
 
           // Send start event

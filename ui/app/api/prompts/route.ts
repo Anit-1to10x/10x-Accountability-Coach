@@ -3,6 +3,13 @@ import fs from 'fs/promises'
 import path from 'path'
 import type { Prompt } from '@/types/prompt'
 import { PATHS } from '@/lib/paths'
+import {
+  getAllPrompts,
+  getSystemPrompts,
+  getAllCategories,
+  matchPrompts,
+  getPromptById,
+} from '@/lib/api/prompt-indexer'
 
 const getPromptsDir = () => PATHS.prompts
 
@@ -93,9 +100,77 @@ function parsePromptMd(content: string, filename: string): DynamicPrompt | null 
   return prompt
 }
 
-// GET - List all prompts (JSON + MD dynamic prompts)
+// GET - List all prompts (JSON + MD dynamic prompts + indexed prompts)
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const useIndexer = searchParams.get('indexed') === 'true'
+    const query = searchParams.get('query')
+    const category = searchParams.get('category')
+
+    // If query is provided, match prompts to it
+    if (query) {
+      const matchResult = await matchPrompts(query)
+      return NextResponse.json({
+        primary: matchResult.primary ? {
+          id: matchResult.primary.prompt.id,
+          name: matchResult.primary.prompt.name,
+          description: matchResult.primary.prompt.description,
+          category: matchResult.primary.prompt.category,
+          score: matchResult.primary.score,
+          matchReasons: matchResult.primary.matchReasons,
+        } : null,
+        secondary: matchResult.secondary.map(m => ({
+          id: m.prompt.id,
+          name: m.prompt.name,
+          description: m.prompt.description,
+          category: m.prompt.category,
+          score: m.score,
+          matchReasons: m.matchReasons,
+        })),
+        systemPrompt: matchResult.systemPrompt ? {
+          id: matchResult.systemPrompt.id,
+          name: matchResult.systemPrompt.name,
+        } : null,
+        contextRequirements: matchResult.contextRequirements,
+      })
+    }
+
+    // If useIndexer is true, use the prompt indexer for better results
+    if (useIndexer) {
+      const indexedPrompts = await getAllPrompts()
+      const systemPrompts = await getSystemPrompts()
+      const categories = await getAllCategories()
+
+      // Filter by category if provided
+      let filteredPrompts = indexedPrompts
+      if (category) {
+        filteredPrompts = indexedPrompts.filter(p => p.category === category)
+      }
+
+      return NextResponse.json({
+        prompts: filteredPrompts.map(p => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          keywords: p.keywords,
+          intent: p.intent,
+          category: p.category,
+          priority: p.priority,
+          reasoning: p.reasoning,
+        })),
+        systemPrompts: systemPrompts.map(p => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          type: p.type,
+        })),
+        categories,
+        total: filteredPrompts.length,
+      })
+    }
+
+    // Legacy method for backward compatibility
     const promptsDir = getPromptsDir()
     const promptsFile = getPromptsFile()
 
