@@ -19,6 +19,9 @@ import {
   ExternalLink,
   Maximize2,
   X,
+  Edit3,
+  Save,
+  XCircle,
 } from 'lucide-react'
 
 interface FileViewerProps {
@@ -28,6 +31,8 @@ interface FileViewerProps {
   isBinary?: boolean
   url?: string
   size?: number
+  onSave?: (path: string, content: string) => Promise<boolean>
+  editable?: boolean
 }
 
 function getFileIcon(path: string) {
@@ -312,12 +317,21 @@ function CodeViewer({ content }: { content: string }) {
   )
 }
 
-export function FileViewer({ content, path, category, isBinary, url, size }: FileViewerProps) {
+export function FileViewer({ content, path, category, isBinary, url, size, onSave, editable = true }: FileViewerProps) {
   const [copied, setCopied] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  // Check if file is editable (text-based)
+  const ext = path?.split('.').pop()?.toLowerCase()
+  const isEditableFile = editable && !isBinary && ['md', 'json', 'txt', 'js', 'ts', 'jsx', 'tsx', 'css', 'html', 'xml', 'yaml', 'yml', 'csv', 'py'].includes(ext || '')
 
   const handleCopy = async () => {
-    if (content) {
-      await navigator.clipboard.writeText(content)
+    const textToCopy = isEditing ? editContent : content
+    if (textToCopy) {
+      await navigator.clipboard.writeText(textToCopy)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
@@ -329,6 +343,38 @@ export function FileViewer({ content, path, category, isBinary, url, size }: Fil
       link.href = url
       link.download = getFileName(path || '')
       link.click()
+    }
+  }
+
+  const handleEdit = () => {
+    setEditContent(content || '')
+    setIsEditing(true)
+    setSaveError(null)
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditContent('')
+    setSaveError(null)
+  }
+
+  const handleSave = async () => {
+    if (!path || !onSave) return
+
+    setIsSaving(true)
+    setSaveError(null)
+
+    try {
+      const success = await onSave(path, editContent)
+      if (success) {
+        setIsEditing(false)
+      } else {
+        setSaveError('Failed to save file')
+      }
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to save file')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -353,11 +399,31 @@ export function FileViewer({ content, path, category, isBinary, url, size }: Fil
   }
 
   const fileName = getFileName(path)
-  const ext = path.split('.').pop()?.toLowerCase()
-  const lineCount = content ? content.split('\n').length : 0
+  const fileExt = path.split('.').pop()?.toLowerCase()
+  const lineCount = isEditing ? editContent.split('\n').length : (content ? content.split('\n').length : 0)
 
   // Render based on file type
   const renderContent = () => {
+    // Show editor in edit mode
+    if (isEditing) {
+      return (
+        <div className="h-full flex flex-col">
+          {saveError && (
+            <div className="px-4 py-2 bg-red-500/20 border-b border-red-500/50 text-red-400 text-sm">
+              {saveError}
+            </div>
+          )}
+          <textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            className="flex-1 w-full p-4 bg-oa-bg-primary text-oa-text-primary font-mono text-sm resize-none focus:outline-none"
+            placeholder="Enter file content..."
+            spellCheck={false}
+          />
+        </div>
+      )
+    }
+
     if (isBinary && url) {
       switch (category) {
         case 'image':
@@ -392,7 +458,7 @@ export function FileViewer({ content, path, category, isBinary, url, size }: Fil
     }
 
     if (content) {
-      switch (ext) {
+      switch (fileExt) {
         case 'md':
           return <MarkdownViewer content={content} />
         case 'json':
@@ -430,6 +496,11 @@ export function FileViewer({ content, path, category, isBinary, url, size }: Fil
           )}
         </div>
         <div className="flex items-center gap-2">
+          {isEditing && (
+            <span className="text-xs text-amber-400 bg-amber-400/20 px-2 py-1 rounded">
+              Editing
+            </span>
+          )}
           <span className="text-[10px] text-oa-text-secondary bg-oa-bg-tertiary px-2 py-1 rounded hidden md:block truncate max-w-[200px]">
             {path}
           </span>
@@ -454,6 +525,45 @@ export function FileViewer({ content, path, category, isBinary, url, size }: Fil
             >
               <Download className="w-4 h-4 text-oa-text-secondary" />
             </button>
+          )}
+          {/* Edit/Save/Cancel buttons */}
+          {isEditableFile && onSave && (
+            <>
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="p-1.5 hover:bg-oa-bg-secondary rounded transition-colors"
+                    title="Cancel editing"
+                    disabled={isSaving}
+                  >
+                    <XCircle className="w-4 h-4 text-oa-text-secondary" />
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 rounded transition-colors text-white text-xs"
+                    title="Save file"
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Save className="w-3 h-3" />
+                    )}
+                    Save
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleEdit}
+                  className="flex items-center gap-1 px-2 py-1 bg-oa-accent hover:bg-oa-accent/80 rounded transition-colors text-white text-xs"
+                  title="Edit file"
+                >
+                  <Edit3 className="w-3 h-3" />
+                  Edit
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

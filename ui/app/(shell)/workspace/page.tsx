@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Folder, FolderOpen, FileText, Image, FileJson, File,
   ChevronRight, ChevronDown, RefreshCw, Home, Zap,
-  MessageSquare, Target, Calendar, CheckSquare
+  MessageSquare, Target, Calendar, CheckSquare, Loader2
 } from 'lucide-react'
+import { FileViewer } from '@/components/agent/FileViewer'
 
 interface FileItem {
   name: string
@@ -16,6 +17,16 @@ interface FileItem {
   modified?: string
   children?: FileItem[]
   extension?: string
+}
+
+interface FileViewerState {
+  content: string | null
+  path: string | null
+  loading: boolean
+  isBinary: boolean
+  category?: string
+  url?: string
+  size?: number
 }
 
 // Get icon based on folder name or file extension
@@ -70,31 +81,72 @@ const formatSize = (bytes?: number) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+// Determine file category based on extension
+const getFileCategory = (extension?: string): string => {
+  if (!extension) return 'text'
+  const ext = extension.toLowerCase()
+
+  const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico']
+  const videoExts = ['mp4', 'webm', 'mov', 'avi']
+  const audioExts = ['mp3', 'wav', 'ogg', 'm4a']
+  const pdfExts = ['pdf']
+
+  if (imageExts.includes(ext)) return 'image'
+  if (videoExts.includes(ext)) return 'video'
+  if (audioExts.includes(ext)) return 'audio'
+  if (pdfExts.includes(ext)) return 'pdf'
+  return 'text'
+}
+
+// Check if file is binary
+const isBinaryFile = (extension?: string): boolean => {
+  if (!extension) return false
+  const ext = extension.toLowerCase()
+  const binaryExts = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico',
+                       'mp4', 'webm', 'mov', 'avi', 'mp3', 'wav', 'ogg', 'm4a',
+                       'pdf', 'zip', 'tar', 'gz', 'exe', 'dll', 'so']
+  return binaryExts.includes(ext)
+}
+
 // File/Folder Tree Item Component
 function TreeItem({
   item,
   level = 0,
   onSelect,
+  onDoubleClick,
+  selectedPath,
 }: {
   item: FileItem
   level?: number
   onSelect: (item: FileItem) => void
+  onDoubleClick?: (item: FileItem) => void
+  selectedPath?: string
 }) {
   const [isExpanded, setIsExpanded] = useState(level < 1)
   const Icon = getIcon(item)
   const hasChildren = item.type === 'folder' && item.children && item.children.length > 0
   const folderColor = item.type === 'folder' ? getFolderColor(item.name) : ''
+  const isSelected = selectedPath === item.path
 
   return (
     <div>
       <motion.div
-        className={`flex items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition-colors hover:bg-oa-bg-secondary group`}
+        className={`flex items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition-colors group ${
+          isSelected
+            ? 'bg-oa-accent/20 border border-oa-accent/50'
+            : 'hover:bg-oa-bg-secondary'
+        }`}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={() => {
           if (item.type === 'folder') {
             setIsExpanded(!isExpanded)
           }
           onSelect(item)
+        }}
+        onDoubleClick={() => {
+          if (item.type === 'file' && onDoubleClick) {
+            onDoubleClick(item)
+          }
         }}
         whileHover={{ x: 2 }}
       >
@@ -118,7 +170,7 @@ function TreeItem({
         )}
 
         {/* Name */}
-        <span className="text-sm text-oa-text-primary flex-1 truncate">
+        <span className={`text-sm flex-1 truncate ${isSelected ? 'text-oa-accent font-medium' : 'text-oa-text-primary'}`}>
           {item.name}
         </span>
 
@@ -143,6 +195,8 @@ function TreeItem({
                 item={child}
                 level={level + 1}
                 onSelect={onSelect}
+                onDoubleClick={onDoubleClick}
+                selectedPath={selectedPath}
               />
             ))}
           </motion.div>
@@ -156,6 +210,13 @@ export default function WorkspacePage() {
   const [contents, setContents] = useState<FileItem[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedItem, setSelectedItem] = useState<FileItem | null>(null)
+  const [showFileViewer, setShowFileViewer] = useState(false)
+  const [fileViewer, setFileViewer] = useState<FileViewerState>({
+    content: null,
+    path: null,
+    loading: false,
+    isBinary: false,
+  })
 
   useEffect(() => {
     loadWorkspace()
@@ -176,8 +237,109 @@ export default function WorkspacePage() {
     }
   }
 
+  const loadFileContent = async (item: FileItem) => {
+    if (item.type !== 'file') return
+
+    const category = getFileCategory(item.extension)
+    const binary = isBinaryFile(item.extension)
+
+    setFileViewer({
+      content: null,
+      path: item.path,
+      loading: true,
+      isBinary: binary,
+      category,
+      size: item.size,
+    })
+
+    try {
+      // For binary files, just set the URL
+      if (binary) {
+        setFileViewer(prev => ({
+          ...prev,
+          loading: false,
+          url: `/api/workspace/file?path=${encodeURIComponent(item.path)}`,
+        }))
+        return
+      }
+
+      // For text files, fetch the content
+      const res = await fetch(`/api/workspace/file?path=${encodeURIComponent(item.path)}`)
+      if (res.ok) {
+        const text = await res.text()
+        setFileViewer(prev => ({
+          ...prev,
+          content: text,
+          loading: false,
+        }))
+      } else {
+        setFileViewer(prev => ({
+          ...prev,
+          content: `Error: Could not load file (${res.status})`,
+          loading: false,
+        }))
+      }
+    } catch (error) {
+      console.error('Failed to load file:', error)
+      setFileViewer(prev => ({
+        ...prev,
+        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        loading: false,
+      }))
+    }
+  }
+
+  // Single click - show details only
   const handleSelect = (item: FileItem) => {
     setSelectedItem(item)
+    setShowFileViewer(false)
+    // Clear file viewer state
+    setFileViewer({
+      content: null,
+      path: null,
+      loading: false,
+      isBinary: false,
+    })
+  }
+
+  // Double click - open file in FileViewer
+  const handleOpenFile = (item: FileItem) => {
+    if (item.type !== 'file') return
+    setSelectedItem(item)
+    setShowFileViewer(true)
+    loadFileContent(item)
+  }
+
+  // Save file content to local directory
+  const handleSaveFile = async (filePath: string, content: string): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/workspace/file', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ path: filePath, content }),
+      })
+
+      const data = await res.json()
+
+      if (data.success) {
+        // Update the file viewer content after successful save
+        setFileViewer(prev => ({
+          ...prev,
+          content: content,
+        }))
+        // Optionally refresh the workspace to update file sizes
+        loadWorkspace()
+        return true
+      } else {
+        console.error('Failed to save file:', data.error)
+        return false
+      }
+    } catch (error) {
+      console.error('Error saving file:', error)
+      return false
+    }
   }
 
   // Count totals
@@ -230,13 +392,18 @@ export default function WorkspacePage() {
         </div>
         <p className="text-sm text-oa-text-secondary">
           Browse your data folder structure - {folders} folders, {files} files
+          {selectedItem?.type === 'file' && (
+            <span className="ml-2 text-oa-accent">
+              • Viewing: {selectedItem.name}
+            </span>
+          )}
         </p>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden flex">
         {/* File Tree */}
-        <div className="w-1/2 border-r border-oa-border overflow-y-auto p-4">
+        <div className="w-1/3 min-w-[250px] max-w-[400px] border-r border-oa-border overflow-y-auto p-4">
           <div className="text-xs font-semibold text-oa-text-secondary uppercase tracking-wider mb-3 px-2">
             Data Folder
           </div>
@@ -246,21 +413,43 @@ export default function WorkspacePage() {
                 key={item.path}
                 item={item}
                 onSelect={handleSelect}
+                onDoubleClick={handleOpenFile}
+                selectedPath={selectedItem?.path}
               />
             ))}
           </div>
         </div>
 
         {/* Preview/Details Panel */}
-        <div className="w-1/2 overflow-y-auto p-6">
-          {selectedItem ? (
-            <div>
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {selectedItem?.type === 'file' && showFileViewer ? (
+            // Show FileViewer for files (on double click)
+            <div className="flex-1 overflow-hidden">
+              {fileViewer.loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="w-6 h-6 animate-spin text-oa-accent" />
+                  <span className="ml-2 text-oa-text-secondary">Loading file...</span>
+                </div>
+              ) : (
+                <FileViewer
+                  content={fileViewer.content}
+                  path={fileViewer.path}
+                  category={fileViewer.category}
+                  isBinary={fileViewer.isBinary}
+                  url={fileViewer.url}
+                  size={fileViewer.size}
+                  onSave={handleSaveFile}
+                  editable={true}
+                />
+              )}
+            </div>
+          ) : selectedItem?.type === 'file' ? (
+            // Show file details (on single click)
+            <div className="p-6 overflow-y-auto">
               <div className="flex items-center gap-3 mb-6">
                 {React.createElement(getIcon(selectedItem), {
                   size: 32,
-                  className: selectedItem.type === 'folder'
-                    ? getFolderColor(selectedItem.name)
-                    : 'text-oa-text-secondary'
+                  className: 'text-oa-text-secondary'
                 })}
                 <div>
                   <h2 className="text-xl font-semibold text-oa-text-primary">
@@ -281,26 +470,58 @@ export default function WorkspacePage() {
                     <div className="flex justify-between">
                       <span className="text-oa-text-secondary">Type</span>
                       <span className="text-oa-text-primary capitalize">
-                        {selectedItem.type}
-                        {selectedItem.extension && ` (.${selectedItem.extension})`}
+                        {selectedItem.extension ? `.${selectedItem.extension} file` : 'File'}
                       </span>
                     </div>
-                    {selectedItem.size !== undefined && (
-                      <div className="flex justify-between">
-                        <span className="text-oa-text-secondary">Size</span>
-                        <span className="text-oa-text-primary">
-                          {formatSize(selectedItem.size)}
-                        </span>
-                      </div>
-                    )}
-                    {selectedItem.modified && (
-                      <div className="flex justify-between">
-                        <span className="text-oa-text-secondary">Modified</span>
-                        <span className="text-oa-text-primary">
-                          {new Date(selectedItem.modified).toLocaleString()}
-                        </span>
-                      </div>
-                    )}
+                    <div className="flex justify-between">
+                      <span className="text-oa-text-secondary">Size</span>
+                      <span className="text-oa-text-primary">{formatSize(selectedItem.size)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-oa-text-secondary">Category</span>
+                      <span className="text-oa-text-primary capitalize">{getFileCategory(selectedItem.extension)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-oa-bg-secondary rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-oa-text-primary mb-2">
+                    How to open
+                  </h3>
+                  <p className="text-sm text-oa-text-secondary">
+                    Double-click on the file in the tree to open it in the file viewer.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : selectedItem?.type === 'folder' ? (
+            // Show folder details
+            <div className="p-6 overflow-y-auto">
+              <div className="flex items-center gap-3 mb-6">
+                {React.createElement(getIcon(selectedItem), {
+                  size: 32,
+                  className: getFolderColor(selectedItem.name)
+                })}
+                <div>
+                  <h2 className="text-xl font-semibold text-oa-text-primary">
+                    {selectedItem.name}
+                  </h2>
+                  <p className="text-sm text-oa-text-secondary">
+                    {selectedItem.path}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-oa-bg-secondary rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-oa-text-primary mb-3">
+                    Details
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-oa-text-secondary">Type</span>
+                      <span className="text-oa-text-primary capitalize">Folder</span>
+                    </div>
                     {selectedItem.children && (
                       <div className="flex justify-between">
                         <span className="text-oa-text-secondary">Contents</span>
@@ -313,24 +534,25 @@ export default function WorkspacePage() {
                   </div>
                 </div>
 
-                {/* Folder description */}
-                {selectedItem.type === 'folder' && (
-                  <div className="bg-oa-bg-secondary rounded-lg p-4">
-                    <h3 className="text-sm font-medium text-oa-text-primary mb-2">
-                      About this folder
-                    </h3>
-                    <p className="text-sm text-oa-text-secondary">
-                      {getFolderDescription(selectedItem.name)}
-                    </p>
-                  </div>
-                )}
+                <div className="bg-oa-bg-secondary rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-oa-text-primary mb-2">
+                    About this folder
+                  </h3>
+                  <p className="text-sm text-oa-text-secondary">
+                    {getFolderDescription(selectedItem.name)}
+                  </p>
+                </div>
               </div>
             </div>
           ) : (
+            // No selection
             <div className="flex flex-col items-center justify-center h-full text-center">
               <Folder className="w-16 h-16 text-oa-text-secondary mb-4 opacity-50" />
               <p className="text-oa-text-secondary">
                 Select a file or folder to view details
+              </p>
+              <p className="text-xs text-oa-text-secondary mt-2">
+                Single-click to view details, double-click to open file viewer
               </p>
             </div>
           )}

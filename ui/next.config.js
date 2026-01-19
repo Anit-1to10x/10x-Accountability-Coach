@@ -2,8 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Production optimizations
-  swcMinify: true,
+  // Production optimizations (swcMinify is default in Next.js 14+)
   compress: true,
 
   // Handle images from external sources
@@ -60,7 +59,9 @@ const nextConfig = {
   },
 
   // Output configuration for deployment
-  output: 'standalone',
+  // Note: 'standalone' is not needed for Vercel (it optimizes automatically)
+  // Only enable standalone for self-hosted deployments
+  // output: 'standalone',
 
   // Disable x-powered-by header
   poweredByHeader: false,
