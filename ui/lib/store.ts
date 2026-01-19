@@ -92,8 +92,16 @@ export type StreamingPhase =
   | 'loading_tools'
   | 'executing_tool'
   | 'executing_code'
+  | 'analyzing_files'
   | 'generating'
   | 'complete'
+
+// File info for streaming
+interface StreamingFileInfo {
+  name: string
+  type: string
+  size: number
+}
 
 // Chat Store
 interface ChatState {
@@ -104,9 +112,11 @@ interface ChatState {
     toolName?: string
     skillName?: string
     promptName?: string
+    files?: StreamingFileInfo[]
+    message?: string
   }
   setTyping: (isTyping: boolean) => void
-  setStreamingPhase: (phase: StreamingPhase, details?: { toolName?: string; skillName?: string; promptName?: string }) => void
+  setStreamingPhase: (phase: StreamingPhase, details?: { toolName?: string; skillName?: string; promptName?: string; files?: StreamingFileInfo[]; message?: string }) => void
   addMessage: (agentId: string, message: ChatMessage) => void
   updateMessage: (agentId: string, messageId: string, updates: Partial<ChatMessage>) => void
   markMessageAnswered: (agentId: string, messageIndex: number) => void
@@ -229,11 +239,52 @@ export const useChatStore = create<ChatState>((set, get) => ({
         ? localStorage.getItem('activeProfileId')
         : null
 
+      // Read file contents for AI context (chunking happens server-side)
+      const filesWithContent = await Promise.all(
+        (attachments || []).map(async (file) => {
+          try {
+            // Only read text-based files for context
+            const textExtensions = ['.md', '.txt', '.json', '.yaml', '.yml', '.csv', '.js', '.ts', '.jsx', '.tsx', '.py', '.html', '.css', '.sql', '.xml']
+            const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+
+            if (textExtensions.includes(ext)) {
+              const content = await file.text()
+              return {
+                name: file.name,
+                content,
+                type: file.type,
+                size: file.size,
+              }
+            }
+
+            // For binary files, just include metadata
+            return {
+              name: file.name,
+              content: `[Binary file: ${file.name}, size: ${file.size} bytes]`,
+              type: file.type,
+              size: file.size,
+            }
+          } catch {
+            return {
+              name: file.name,
+              content: `[Could not read file: ${file.name}]`,
+              type: file.type,
+              size: file.size,
+            }
+          }
+        })
+      )
+
       // Use fetch streaming instead of WebSocket
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agentId, content, profileId }),
+        body: JSON.stringify({
+          agentId,
+          content,
+          profileId,
+          files: filesWithContent.length > 0 ? filesWithContent : undefined,
+        }),
       })
 
       if (!response.ok) {
@@ -296,6 +347,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
                     },
                   })
                 }
+                break
+
+              case 'files_processed':
+                // Show file analysis status
+                get().setStreamingPhase('analyzing_files', {
+                  files: data.files,
+                  message: data.message,
+                })
                 break
 
               case 'chunk':

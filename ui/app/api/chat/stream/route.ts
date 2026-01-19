@@ -7,14 +7,19 @@
  * - MCP integration for external tool calls
  * - Sandbox code execution capability
  * - Tool call streaming to UI
+ * - File chunking and context for discussing uploaded files
+ * - User profile context with priority over system defaults
+ * - Parallel API loading for optimal performance
+ * - MCP data fetching with streaming support
  */
 
 import { NextRequest } from 'next/server';
 import { chatStream, createSSETextStream } from '@/lib/api/openanalyst-client';
-import { buildContext, buildSystemPrompt, buildEnhancedSystemPrompt } from '@/lib/api/context-builder';
-import { matchSkill } from '@/lib/api/skills-manager';
-import { getToolsForLLM, executeToolCall } from '@/lib/mcp/manager';
+import { buildEnhancedSystemPrompt } from '@/lib/api/context-builder';
+import { loadContextParallel } from '@/lib/api/parallel-loader';
+import { executeToolCall } from '@/lib/mcp/manager';
 import { executeCode, formatResultForLLM } from '@/lib/sandbox/executor';
+import { fetchMCPData, formatMCPContext } from '@/lib/mcp/data-fetcher';
 import type { MCPToolCall } from '@/types/mcp';
 
 export const runtime = 'nodejs';
@@ -144,9 +149,17 @@ function detectTaskType(content: string): ApiSuggestion | null {
   return null;
 }
 
+// File attachment structure from chat
+interface FileAttachment {
+  name: string;
+  content: string;
+  type: string;
+  size: number;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { agentId, content, profileId } = await request.json();
+    const { agentId, content, profileId, files } = await request.json();
 
     if (!content) {
       return new Response(JSON.stringify({ error: 'Message content is required' }), {
@@ -155,40 +168,75 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 1. Build user context
-    const context = await buildContext(profileId);
+    const attachedFiles: FileAttachment[] = files || [];
 
-    // 2. Detect if task would benefit from specific APIs
+    // 1. PARALLEL LOADING - Load all context data simultaneously
+    // This is much faster than sequential loading
+    const {
+      context,
+      userProfileContext,
+      fileContexts,
+      matchedSkill,
+      mcpTools,
+      mcpStatus,
+      agentCapabilities,
+      loadTime,
+    } = await loadContextParallel({
+      profileId,
+      agentId: agentId || 'unified',
+      userMessage: content,
+      files: attachedFiles,
+    });
+
+    console.log(`[chat/stream] Parallel context loaded in ${loadTime}ms`);
+
+    // 2. Build file context string
+    let fileContext = '';
+    if (fileContexts.length > 0) {
+      fileContext = `\n## Attached Files\n${fileContexts.join('\n')}\n`;
+    }
+
+    // 3. Detect if task would benefit from specific APIs
     const apiSuggestion = detectTaskType(content);
-
-    // 3. Match skill (optional)
-    const skill = await matchSkill(content, agentId || 'unified');
-    const matchedSkill = skill ? { name: skill.name, body: skill.body } : null;
 
     // 4. Build enhanced system prompt with dynamic prompt matching
     // This selects the best prompts based on user's message content
     // Also uses agent capabilities to filter which prompts/skills are available
-    const { systemPrompt: enhancedPrompt, matchedPrompts, agentCapabilities } = await buildEnhancedSystemPrompt(
+    const { systemPrompt: enhancedPrompt, matchedPrompts } = await buildEnhancedSystemPrompt(
       context,
       content,
       agentId || 'unified',
       matchedSkill
     );
 
-    // Add API suggestion note if applicable
+    // 7. Build final system prompt with all contexts
+    // Priority order: User profile > System defaults > File context
     let systemPrompt = enhancedPrompt;
+
+    // Add user profile context (HIGH PRIORITY - overrides defaults)
+    if (userProfileContext) {
+      systemPrompt = `${userProfileContext}\n\n${systemPrompt}`;
+    }
+
+    // Add file context for discussing attached files
+    if (fileContext) {
+      systemPrompt += `\n\n${fileContext}\n\n## File Discussion Instructions
+When the user asks about attached files:
+- Reference specific data from the file context above
+- For CSV files: Use column names and sample data to answer questions
+- For code files: Analyze functions, classes, and logic
+- For JSON: Navigate the structure and explain the data
+- If you need more of the file, tell the user which sections you need
+- Be specific: cite line numbers, column names, or keys when possible`;
+    }
+
+    // Add API suggestion note if applicable
     if (apiSuggestion && !apiSuggestion.configured) {
       systemPrompt += `\n\nNote: The user is asking about ${apiSuggestion.type.replace('_', ' ')}. The ${apiSuggestion.suggestedApi} API is not configured, so provide the best response possible with available information, but mention that results could be improved by configuring the ${apiSuggestion.suggestedApi} API.`;
     }
 
-    // 5. Get available tools (MCP + built-in)
-    let availableTools: any[] = [...BUILT_IN_TOOLS];
-    try {
-      const mcpTools = await getToolsForLLM();
-      availableTools = [...availableTools, ...mcpTools];
-    } catch (err) {
-      console.warn('[chat/stream] Failed to load MCP tools:', err);
-    }
+    // 8. Get available tools (MCP already loaded in parallel + built-in)
+    const availableTools: any[] = [...BUILT_IN_TOOLS, ...mcpTools];
 
     // Add tools context to system prompt if tools are available
     if (availableTools.length > 0) {
@@ -217,6 +265,30 @@ When using tools, the results will be shown to the user in real-time.`;
         const reader = textStream.getReader();
 
         try {
+          // Send MCP status if connected
+          if (mcpStatus && mcpStatus.status === 'connected') {
+            const mcpEvent = `data: ${JSON.stringify({
+              type: 'mcp_connected',
+              servers: mcpStatus.servers || [],
+              toolCount: mcpTools.length,
+            })}\n\n`;
+            controller.enqueue(encoder.encode(mcpEvent));
+          }
+
+          // Send file context info if files are attached
+          if (attachedFiles.length > 0) {
+            const filesEvent = `data: ${JSON.stringify({
+              type: 'files_processed',
+              files: attachedFiles.map(f => ({
+                name: f.name,
+                type: f.type,
+                size: f.size,
+              })),
+              message: `Analyzing ${attachedFiles.length} file(s) for context`,
+            })}\n\n`;
+            controller.enqueue(encoder.encode(filesEvent));
+          }
+
           // Send API suggestion if detected
           if (apiSuggestion) {
             const suggestionEvent = `data: ${JSON.stringify({

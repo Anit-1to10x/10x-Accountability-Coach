@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import * as Icons from 'lucide-react'
@@ -15,13 +15,18 @@ interface NavSectionProps {
 
 export function NavSection({ title, href, icon, count }: NavSectionProps) {
   const pathname = usePathname()
-  const { activeType, activeId, setActive } = useNavigationStore()
+  const { setActive } = useNavigationStore()
 
-  const handleClick = () => {
-    setActive('nav', href)
-  }
+  // Check if current path matches this nav item
+  // This ensures proper state sync with browser back/forward
+  const isActive = pathname === href || pathname?.startsWith(`${href}/`)
 
-  const isActive = activeType === 'nav' && activeId === href
+  // Sync navigation store with actual pathname (handles browser back/forward)
+  useEffect(() => {
+    if (isActive) {
+      setActive('nav', href)
+    }
+  }, [pathname, isActive, href, setActive])
 
   // Map icon names to Lucide icons
   const iconMap: Record<string, React.ComponentType<any>> = {
@@ -44,7 +49,7 @@ export function NavSection({ title, href, icon, count }: NavSectionProps) {
   const IconComponent = iconMap[icon] || Icons.Circle
 
   return (
-    <Link href={href} className="block w-full" onClick={handleClick}>
+    <Link href={href} className="block w-full" prefetch={true}>
       <div
         className={`
           mx-3 px-4 py-3 rounded-lg text-base font-medium

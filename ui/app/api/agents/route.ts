@@ -67,9 +67,51 @@ export async function POST(request: NextRequest) {
     // Ensure base directory exists
     await fs.mkdir(DATA_DIR, { recursive: true })
 
-    // Create agent-specific folder
+    // Create agent-specific folder with complete workspace structure
     const agentDir = path.join(DATA_DIR, 'agents', newAgent.id)
     await fs.mkdir(agentDir, { recursive: true })
+
+    // Create workspace subdirectories
+    const workspaceDirs = [
+      'files',           // General files uploaded by user
+      'images',          // Generated or uploaded images
+      'videos',          // Generated or uploaded videos
+      'summaries',       // AI-generated summaries
+      'notes',           // Meeting notes, personal notes
+      'exports',         // Exported content
+      'chats',           // Chat history for this agent
+      'generated',       // All AI-generated content
+    ]
+
+    for (const dir of workspaceDirs) {
+      await fs.mkdir(path.join(agentDir, dir), { recursive: true })
+    }
+
+    // Create README.md in the agent folder
+    const readmeMd = `# ${newAgent.name} Workspace
+
+This folder contains all files and content related to the **${newAgent.name}** agent.
+
+## Folder Structure
+
+- \`files/\` - General files uploaded by you
+- \`images/\` - Generated or uploaded images
+- \`videos/\` - Generated or uploaded videos
+- \`summaries/\` - AI-generated summaries and insights
+- \`notes/\` - Meeting notes and personal notes
+- \`exports/\` - Exported content (PDFs, reports)
+- \`chats/\` - Chat history with this agent
+- \`generated/\` - All AI-generated content
+
+## Agent Details
+
+- **ID:** ${newAgent.id}
+- **Created:** ${new Date().toISOString().split('T')[0]}
+
+---
+*This workspace is managed by 10X Accountability Coach*
+`
+    await fs.writeFile(path.join(agentDir, 'README.md'), readmeMd)
 
     // Create agent metadata file
     const agentMetadata = {

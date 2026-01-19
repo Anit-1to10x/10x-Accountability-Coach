@@ -12,7 +12,8 @@ import {
   CheckCircle,
   Loader2,
   Zap,
-  MessageSquare
+  MessageSquare,
+  FileSearch,
 } from 'lucide-react'
 
 export type StreamingPhase =
@@ -23,6 +24,7 @@ export type StreamingPhase =
   | 'loading_tools'
   | 'executing_tool'
   | 'executing_code'
+  | 'analyzing_files'
   | 'generating'
   | 'complete'
 
@@ -32,6 +34,7 @@ interface StreamingStatusProps {
   toolName?: string
   skillName?: string
   promptName?: string
+  files?: Array<{ name: string; type: string; size: number }>
   isVisible?: boolean
 }
 
@@ -83,6 +86,12 @@ const phaseConfig: Record<StreamingPhase, {
     color: 'text-green-400',
     animate: true,
   },
+  analyzing_files: {
+    icon: FileSearch,
+    label: 'Analyzing files',
+    color: 'text-emerald-400',
+    animate: true,
+  },
   generating: {
     icon: Sparkles,
     label: 'Generating response',
@@ -103,6 +112,7 @@ export function StreamingStatus({
   toolName,
   skillName,
   promptName,
+  files,
   isVisible = true,
 }: StreamingStatusProps) {
   const config = phaseConfig[phase]
@@ -116,6 +126,11 @@ export function StreamingStatus({
     displayText = `Matched: ${skillName}`
   } else if (phase === 'matching_prompt' && promptName) {
     displayText = `Framework: ${promptName}`
+  } else if (phase === 'analyzing_files' && files && files.length > 0) {
+    const fileNames = files.map(f => f.name).join(', ')
+    displayText = files.length === 1
+      ? `Analyzing ${fileNames}`
+      : `Analyzing ${files.length} files`
   } else if (details) {
     displayText = details
   }

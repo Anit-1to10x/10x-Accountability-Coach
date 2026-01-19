@@ -105,6 +105,31 @@
         "blockedTopics": []
       },
       "updatedAt": "2025-01-19T00:00:00.000Z"
+    },
+    "todo-assistant": {
+      "agentId": "todo-assistant",
+      "assignedSkills": [
+        "planning",
+        "daily-checkin"
+      ],
+      "assignedPrompts": [
+        "planning",
+        "daily-priority",
+        "time-blocking",
+        "quick-win",
+        "tomorrow-prep",
+        "goal-decomposition"
+      ],
+      "systemPrompt": "You are an AI todo assistant. Help users break down their goals into actionable tasks, prioritize work, and create realistic plans. Always provide structured todo suggestions in JSON format.",
+      "personality": {
+        "tone": "balanced",
+        "style": "helpful, practical, and focused on action. Keep suggestions specific and achievable."
+      },
+      "restrictions": {
+        "allowOnlyAssigned": false,
+        "blockedTopics": []
+      },
+      "updatedAt": "2025-01-19T00:00:00.000Z"
     }
   },
   "globalDefaults": {

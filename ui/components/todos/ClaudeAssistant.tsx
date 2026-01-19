@@ -1,15 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Sparkles, Send, Wand2 } from 'lucide-react'
+import { X, Sparkles, Send, Wand2, Loader2 } from 'lucide-react'
 import ChatMessage from '@/components/chat/ChatMessage'
-import TypingIndicator from '@/components/chat/TypingIndicator'
+import { StreamingStatus, StreamingPhase } from '@/components/chat/StreamingStatus'
 
 interface ClaudeAssistantProps {
   onGenerate: (todos: Partial<any>[]) => void
   onClose: () => void
   userName: string
+  profileId?: string
 }
 
 interface Message {
@@ -19,28 +20,45 @@ interface Message {
   timestamp: Date
 }
 
-export default function ClaudeAssistant({ onGenerate, onClose, userName }: ClaudeAssistantProps) {
+interface SuggestedTodo {
+  text: string
+  priority: 'high' | 'medium' | 'low'
+}
+
+/**
+ * Claude Assistant - AI-powered todo planning
+ * Uses OpenAnalyst API for actual AI responses (not simulated)
+ */
+export default function ClaudeAssistant({ onGenerate, onClose, userName, profileId }: ClaudeAssistantProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: `Hi ${userName}! I'm Claude, your AI accountability assistant. I can help you:\n\n• Break down your challenges into actionable todos\n• Prioritize tasks based on your goals\n• Suggest next steps for your active challenges\n• Create a realistic daily plan\n\nWhat would you like help with?`,
+      text: `Hi ${userName}! I'm your AI accountability assistant. I can help you:\n\n• Break down your challenges into actionable todos\n• Prioritize tasks based on your goals\n• Suggest next steps for your active challenges\n• Create a realistic daily plan\n\nWhat would you like help with?`,
       isUser: false,
       timestamp: new Date(),
     },
   ])
   const [input, setInput] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [suggestedTodos, setSuggestedTodos] = useState<any[]>([])
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [streamingPhase, setStreamingPhase] = useState<StreamingPhase>('idle')
+  const [suggestedTodos, setSuggestedTodos] = useState<SuggestedTodo[]>([])
+  const [currentStreamingText, setCurrentStreamingText] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const quickActions = [
     'Suggest todos for today',
-    'Break down my Python challenge',
+    'Break down my current challenge',
     'What should I focus on next?',
     'Create a realistic daily plan',
   ]
 
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, currentStreamingText])
+
   const handleSend = async (message: string) => {
-    if (!message.trim()) return
+    if (!message.trim() || isStreaming) return
 
     // Add user message
     const userMessage: Message = {
@@ -52,61 +70,161 @@ export default function ClaudeAssistant({ onGenerate, onClose, userName }: Claud
 
     setMessages(prev => [...prev, userMessage])
     setInput('')
-    setIsTyping(true)
+    setIsStreaming(true)
+    setStreamingPhase('thinking')
+    setCurrentStreamingText('')
+    setSuggestedTodos([])
 
-    // Simulate Claude response
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    try {
+      // Build system prompt for todo generation
+      const systemPrompt = `You are an AI accountability assistant helping ${userName} plan their todos and tasks.
 
-    // Generate AI response based on input
-    let response = ''
-    let todos: any[] = []
+Your role is to:
+1. Suggest actionable, specific todos based on the user's goals and challenges
+2. Prioritize tasks (high, medium, low) based on importance and urgency
+3. Keep suggestions realistic and achievable
+4. Reference their actual context when available
 
-    if (message.toLowerCase().includes('today') || message.toLowerCase().includes('suggest')) {
-      response = "Based on your active Python challenge and current streak, here are today's priorities:\n\nI've created these todos to keep your momentum going. Want me to add them?"
+When suggesting todos, format them as a JSON array at the end of your response like this:
+\`\`\`json
+[
+  {"text": "Task description", "priority": "high"},
+  {"text": "Another task", "priority": "medium"}
+]
+\`\`\`
 
-      todos = [
-        { text: 'Complete Python lesson 6 (30 min)', priority: 'high' },
-        { text: 'Review yesterday\'s concepts (15 min)', priority: 'medium' },
-        { text: 'Practice 3 coding exercises', priority: 'medium' },
-        { text: 'Update your challenge log', priority: 'low' },
-      ]
-    } else if (message.toLowerCase().includes('python') || message.toLowerCase().includes('break down')) {
-      response = "Let's break down your Python learning into manageable steps for this week:\n\nThese will help you make steady progress. Should I add them?"
+Keep your conversational response friendly and encouraging. Then provide the structured todos.`
 
-      todos = [
-        { text: 'Complete NumPy basics module', priority: 'high' },
-        { text: 'Build a simple calculator project', priority: 'high' },
-        { text: 'Read Python documentation on data structures', priority: 'medium' },
-        { text: 'Watch tutorial on Pandas DataFrame', priority: 'medium' },
-        { text: 'Join Python community forum and introduce yourself', priority: 'low' },
-      ]
-    } else if (message.toLowerCase().includes('focus') || message.toLowerCase().includes('next')) {
-      response = "Looking at your 12-day streak, you're building great momentum! Here's what I recommend focusing on next:\n\nWant me to create these todos?"
+      // Call the streaming API
+      const response = await fetch('/api/chat/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: 'todo-assistant',
+          content: message,
+          profileId,
+        }),
+      })
 
-      todos = [
-        { text: 'Deep dive into data visualization (1 hour)', priority: 'high' },
-        { text: 'Start planning your first data project', priority: 'high' },
-        { text: 'Review all concepts learned so far', priority: 'medium' },
-      ]
-    } else {
-      response = "I understand you're looking for guidance. Based on your current challenges and progress, I can suggest specific todos. Try asking:\n\n• 'What should I work on today?'\n• 'Break down my active challenge'\n• 'Create a realistic plan for this week'"
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
+      }
+
+      if (!response.body) {
+        throw new Error('No response body')
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let fullContent = ''
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+
+        if (done) {
+          break
+        }
+
+        buffer += decoder.decode(value, { stream: true })
+
+        // Process SSE events
+        const events = buffer.split('\n\n')
+        buffer = events.pop() || ''
+
+        for (const event of events) {
+          if (!event.startsWith('data: ')) continue
+
+          try {
+            const data = JSON.parse(event.slice(6))
+
+            switch (data.type) {
+              case 'start':
+                setStreamingPhase('thinking')
+                break
+
+              case 'skill_match':
+                setStreamingPhase('matching_skill')
+                break
+
+              case 'chunk':
+                if (data.content) {
+                  fullContent += data.content
+                  setCurrentStreamingText(fullContent)
+                  setStreamingPhase('generating')
+                }
+                break
+
+              case 'end':
+                setStreamingPhase('complete')
+                break
+
+              case 'error':
+                throw new Error(data.error || 'Unknown error')
+            }
+          } catch (e) {
+            // Skip malformed JSON
+          }
+        }
+      }
+
+      // Parse todos from response
+      const todos = parseTodosFromResponse(fullContent)
+      if (todos.length > 0) {
+        setSuggestedTodos(todos)
+      }
+
+      // Add assistant message
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: fullContent.replace(/```json[\s\S]*?```/g, '').trim(),
+        isUser: false,
+        timestamp: new Date(),
+      }
+
+      setMessages(prev => [...prev, assistantMessage])
+      setCurrentStreamingText('')
+
+    } catch (error) {
+      console.error('Claude Assistant error:', error)
+
+      // Add error message
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: 'Sorry, I encountered an error. Please try again.',
+        isUser: false,
+        timestamp: new Date(),
+      }
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsStreaming(false)
+      setStreamingPhase('idle')
     }
+  }
 
-    setIsTyping(false)
-
-    const claudeMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      text: response,
-      isUser: false,
-      timestamp: new Date(),
+  // Parse todos from AI response
+  const parseTodosFromResponse = (text: string): SuggestedTodo[] => {
+    try {
+      const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/)
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[1])
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (t): t is SuggestedTodo =>
+              typeof t.text === 'string' &&
+              ['high', 'medium', 'low'].includes(t.priority)
+          )
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse todos:', e)
     }
-
-    setMessages(prev => [...prev, claudeMessage])
-    setSuggestedTodos(todos)
+    return []
   }
 
   const handleAddTodos = () => {
     onGenerate(suggestedTodos)
+    onClose()
   }
 
   return (
@@ -131,7 +249,7 @@ export default function ClaudeAssistant({ onGenerate, onClose, userName }: Claud
               <Sparkles size={20} className="text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-white">Claude Assistant</h2>
+              <h2 className="text-xl font-semibold text-white">AI Todo Assistant</h2>
               <p className="text-white/60 text-sm">AI-powered todo planning</p>
             </div>
           </div>
@@ -156,10 +274,27 @@ export default function ClaudeAssistant({ onGenerate, onClose, userName }: Claud
             ))}
           </AnimatePresence>
 
-          {isTyping && <TypingIndicator />}
+          {/* Streaming text */}
+          {currentStreamingText && (
+            <ChatMessage
+              message={currentStreamingText}
+              isUser={false}
+              timestamp={new Date()}
+            />
+          )}
+
+          {/* Streaming status */}
+          {isStreaming && (
+            <div className="flex justify-start mb-4">
+              <StreamingStatus
+                phase={streamingPhase}
+                isVisible={true}
+              />
+            </div>
+          )}
 
           {/* Suggested Todos Preview */}
-          {suggestedTodos.length > 0 && !isTyping && (
+          {suggestedTodos.length > 0 && !isStreaming && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -196,7 +331,7 @@ export default function ClaudeAssistant({ onGenerate, onClose, userName }: Claud
           )}
 
           {/* Quick Actions */}
-          {messages.length === 1 && (
+          {messages.length === 1 && !isStreaming && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -218,6 +353,8 @@ export default function ClaudeAssistant({ onGenerate, onClose, userName }: Claud
               </div>
             </motion.div>
           )}
+
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area */}
@@ -228,23 +365,28 @@ export default function ClaudeAssistant({ onGenerate, onClose, userName }: Claud
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
-              placeholder="Ask Claude for help..."
-              className="flex-1 bg-transparent text-white placeholder-white/40 outline-none"
+              placeholder="Ask for help with your todos..."
+              disabled={isStreaming}
+              className="flex-1 bg-transparent text-white placeholder-white/40 outline-none disabled:opacity-50"
             />
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleSend(input)}
-              disabled={!input.trim() || isTyping}
+              disabled={!input.trim() || isStreaming}
               className={`
                 p-2 rounded-lg transition-colors
-                ${input.trim() && !isTyping
+                ${input.trim() && !isStreaming
                   ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white'
                   : 'bg-white/10 text-white/40 cursor-not-allowed'
                 }
               `}
             >
-              <Send size={18} />
+              {isStreaming ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Send size={18} />
+              )}
             </motion.button>
           </div>
         </div>

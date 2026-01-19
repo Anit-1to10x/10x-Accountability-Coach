@@ -318,6 +318,7 @@ ${firstStep.getMessage({})}`
                 toolName={streamingDetails.toolName}
                 skillName={streamingDetails.skillName}
                 promptName={streamingDetails.promptName}
+                files={streamingDetails.files}
                 isVisible={true}
               />
             </div>
