@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useChatStore, useOnboardingStore } from '@/lib/store'
+import { useChatStore, useOnboardingStore, useAgentStore } from '@/lib/store'
 import { ChatGreeting } from './ChatGreeting'
 import { ChatInputEnhanced } from './ChatInputEnhanced'
 import { QuickActionsPanel } from './QuickActionsPanel'
@@ -22,6 +22,8 @@ interface UnifiedChatProps {
 export function UnifiedChat({ agent, onCheckinClick, onCreateSkillClick }: UnifiedChatProps) {
   const { messages, isTyping, streamingPhase, streamingDetails, addMessage, sendMessage, markMessageAnswered } = useChatStore()
   const { answerStep, responses, isActive: onboardingActive } = useOnboardingStore()
+  const { getSelectedAgents } = useAgentStore()
+  const selectedAgents = getSelectedAgents()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const initializationRef = useRef(false) // Prevent duplicate initialization
@@ -292,7 +294,7 @@ ${firstStep.getMessage({})}`
         {/* Greeting - shown when no messages */}
         {showGreeting && currentMessages.length === 0 && (
           <div className="mb-12">
-            <ChatGreeting agentName={agent?.name} />
+            <ChatGreeting agentName={agent?.name} selectedAgents={selectedAgents} />
           </div>
         )}
 

@@ -74,6 +74,59 @@ OPENANALYST_API_KEY=sk-oa-v1-YOUR-ACTUAL-API-KEY-HERE
 OPENANALYST_MODEL=openanalyst-beta
 ```
 
+## OpenAnalyst API Key Structure
+
+The 10X Accountability Coach uses the OpenAnalyst API for AI-powered features. Here's the complete API key configuration:
+
+### Environment Variables
+
+| Variable | Required | Description | Example Value |
+|----------|----------|-------------|---------------|
+| `OPENANALYST_API_URL` | Yes | Base URL for API requests | `https://api.openanalyst.com/api` |
+| `OPENANALYST_API_KEY` | Yes | Your personal API key | `sk-oa-v1-xxxxxxxxxxxxxxxx` |
+| `OPENANALYST_MODEL` | Yes | AI model to use | `openanalyst-beta` |
+| `GEMINI_API_KEY` | No | Optional for image generation | `AIza...` |
+
+### API Key Format
+```
+sk-oa-v1-xxxxxxxxxxxxxxxxxxxxxxxx
+└──┬───┘ └────────┬───────────────┘
+   │              │
+   │              └── Unique key identifier
+   └── Version prefix (v1)
+```
+
+### File Location
+```
+10x-Accountability-Coach/
+├── ui/
+│   └── .env.local    ← Your API keys go HERE (git-ignored)
+└── .env.example      ← Template file (safe to commit)
+```
+
+### Complete Environment File Example
+```env
+# ===========================================
+# OpenAnalyst API Configuration (Required)
+# ===========================================
+# Get your API key at: https://10x.events/api-key
+
+OPENANALYST_API_URL=https://api.openanalyst.com/api
+OPENANALYST_API_KEY=sk-oa-v1-YOUR-ACTUAL-API-KEY-HERE
+OPENANALYST_MODEL=openanalyst-beta
+
+# ===========================================
+# Optional Integrations
+# ===========================================
+
+# Gemini AI (for image generation features)
+# GEMINI_API_KEY=your-gemini-key-here
+
+# Supabase (for cloud database - optional)
+# SUPABASE_URL=your-supabase-url
+# SUPABASE_KEY=your-supabase-key
+```
+
 ### 3. Start the App
 
 ```bash

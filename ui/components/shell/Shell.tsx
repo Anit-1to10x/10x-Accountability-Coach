@@ -25,9 +25,9 @@ export function Shell({ left, center, right }: ShellProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex min-h-0">
-        {/* Left Sidebar - Fixed width */}
-        <div className="w-60 border-r border-oa-border overflow-y-auto flex-shrink-0">
+      <div className="flex-1 flex min-h-0 overflow-hidden">
+        {/* Left Sidebar - Width controlled by sidebar component */}
+        <div className="border-r border-oa-border flex-shrink-0 h-full">
           {left}
         </div>
 

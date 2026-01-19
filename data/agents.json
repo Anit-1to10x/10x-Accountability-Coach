@@ -1,9 +1,11 @@
 {
   "agents": [
     {
-      "id": "accountability-coach",
-      "name": "Accountability Coach",
-      "description": "Your personal accountability partner who helps you stay on track with your goals",
+      "id": "general-coach",
+      "name": "General Coach",
+      "description": "Your all-purpose assistant for general coaching, motivation, and productivity support",
+      "icon": "🌟",
+      "color": "blue",
       "avatar": "coach",
       "isDefault": true,
       "skills": [
@@ -16,12 +18,15 @@
         "daily-checkin",
         "progress-tracking",
         "motivation",
-        "planning"
+        "planning",
+        "general-assistance"
       ],
       "personality": {
         "tone": "encouraging",
         "style": "supportive but honest"
-      }
+      },
+      "quickActions": [],
+      "sections": []
     }
   ],
   "globalSkills": [],

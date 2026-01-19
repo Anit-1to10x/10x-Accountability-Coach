@@ -11,7 +11,7 @@ import { loadUserProfile, buildUserContext, UserProfile } from '../user-profile-
 import { processFile, formatFileContext, getRelevantChunks, ProcessedFile } from '../file-processor'
 import { getToolsForLLM } from '../mcp/manager'
 import { checkMCPStatus, MCPStreamEvent } from '../mcp/data-fetcher'
-import { getAgentCapabilities, AgentCapabilities } from '../agent-capabilities'
+import { getAgentCapabilities, getCombinedAgentCapabilities, AgentCapabilities } from '../agent-capabilities'
 
 // File attachment from chat
 interface FileAttachment {
@@ -42,11 +42,12 @@ export interface ParallelLoadResult {
 export async function loadContextParallel(options: {
   profileId?: string | null
   agentId?: string
+  selectedAgentIds?: string[] // For unified chat with multiple agents
   userMessage?: string
   files?: FileAttachment[]
 }): Promise<ParallelLoadResult> {
   const startTime = Date.now()
-  const { profileId, agentId = 'unified', userMessage = '', files = [] } = options
+  const { profileId, agentId = 'unified', selectedAgentIds = [], userMessage = '', files = [] } = options
 
   // Start all operations in parallel
   const [
@@ -73,8 +74,10 @@ export async function loadContextParallel(options: {
     // MCP status
     checkMCPStatus().catch(() => null),
 
-    // Agent capabilities
-    getAgentCapabilities(agentId),
+    // Agent capabilities - use combined if multiple agents selected
+    selectedAgentIds.length > 0
+      ? getCombinedAgentCapabilities(selectedAgentIds)
+      : getAgentCapabilities(agentId),
 
     // Process all files in parallel
     ...files.map(async (file) => {

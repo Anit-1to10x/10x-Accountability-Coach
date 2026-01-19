@@ -85,7 +85,7 @@ export function AddAgentButton() {
       <motion.button
         onClick={() => setShowModal(true)}
         className="
-          w-full mx-3 px-4 py-2.5 rounded-lg text-sm font-medium
+          w-full px-4 py-2.5 rounded-lg text-sm font-medium
           bg-gradient-to-r from-oa-accent/10 to-purple-500/10
           border border-oa-accent/30
           hover:border-oa-accent/50 hover:from-oa-accent/20 hover:to-purple-500/20
@@ -93,8 +93,8 @@ export function AddAgentButton() {
           transition-all duration-200
           flex items-center justify-center gap-2
         "
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
         transition={{
           type: 'spring',
           stiffness: 400,

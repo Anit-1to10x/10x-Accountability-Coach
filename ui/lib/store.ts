@@ -23,6 +23,19 @@ export const useNavigationStore = create<NavigationState>((set) => ({
   setActive: (type, id) => set({ activeType: type, activeId: id }),
 }))
 
+// Sidebar Store - Track collapsed state
+interface SidebarState {
+  isCollapsed: boolean
+  toggleSidebar: () => void
+  setSidebarCollapsed: (collapsed: boolean) => void
+}
+
+export const useSidebarStore = create<SidebarState>((set) => ({
+  isCollapsed: false,
+  toggleSidebar: () => set((state) => ({ isCollapsed: !state.isCollapsed })),
+  setSidebarCollapsed: (collapsed) => set({ isCollapsed: collapsed }),
+}))
+
 // Profile Store
 interface Profile {
   id: string
@@ -64,19 +77,66 @@ export const useProfileStore = create<ProfileState>((set) => ({
 interface AgentState {
   agents: Agent[]
   activeAgentId: string | null
+  selectedAgentIds: string[] // Multi-select for unified chat
   setActiveAgent: (id: string | null) => void
+  toggleAgentSelection: (id: string) => void
+  selectAllAgents: () => void
+  deselectAllAgents: () => void
+  isAgentSelected: (id: string) => boolean
+  getSelectedAgents: () => Agent[]
   loadAgents: () => Promise<void>
 }
 
-export const useAgentStore = create<AgentState>((set) => ({
+export const useAgentStore = create<AgentState>((set, get) => ({
   agents: [],
   activeAgentId: null,
+  selectedAgentIds: [], // Will be populated with default agent on load
   setActiveAgent: (id) => set({ activeAgentId: id }),
+  toggleAgentSelection: (id) => {
+    const { selectedAgentIds } = get()
+    if (selectedAgentIds.includes(id)) {
+      // Don't allow deselecting if it's the only one selected
+      if (selectedAgentIds.length > 1) {
+        set({ selectedAgentIds: selectedAgentIds.filter(agentId => agentId !== id) })
+      }
+    } else {
+      set({ selectedAgentIds: [...selectedAgentIds, id] })
+    }
+  },
+  selectAllAgents: () => {
+    const { agents } = get()
+    set({ selectedAgentIds: agents.map(a => a.id) })
+  },
+  deselectAllAgents: () => {
+    const { agents } = get()
+    // Keep at least the default agent selected
+    const defaultAgent = agents.find(a => a.isDefault)
+    set({ selectedAgentIds: defaultAgent ? [defaultAgent.id] : [] })
+  },
+  isAgentSelected: (id) => {
+    return get().selectedAgentIds.includes(id)
+  },
+  getSelectedAgents: () => {
+    const { agents, selectedAgentIds } = get()
+    return agents.filter(a => selectedAgentIds.includes(a.id))
+  },
   loadAgents: async () => {
     try {
       const response = await fetch('/api/agents')
-      const agents = await response.json()
-      set({ agents })
+      const data = await response.json()
+      // Handle both array and object response formats
+      const agents = Array.isArray(data) ? data : (data.agents || [])
+      // Auto-select default agent on first load
+      const defaultAgent = agents.find((a: Agent) => a.isDefault)
+      const currentSelected = get().selectedAgentIds
+      set({
+        agents,
+        selectedAgentIds: currentSelected.length === 0 && defaultAgent
+          ? [defaultAgent.id]
+          : currentSelected.length === 0 && agents.length > 0
+            ? [agents[0].id] // Fallback to first agent if no default
+            : currentSelected
+      })
     } catch (error) {
       console.error('Failed to load agents:', error)
     }
@@ -293,6 +353,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
         })
       )
 
+      // Get selected agent IDs from agent store (for unified chat with multiple agents)
+      const selectedAgentIds = useAgentStore.getState().selectedAgentIds
+
       // Use fetch streaming instead of WebSocket
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
@@ -302,6 +365,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           content,
           profileId,
           files: filesWithContent.length > 0 ? filesWithContent : undefined,
+          selectedAgentIds: agentId === 'unified' ? selectedAgentIds : undefined,
         }),
       })
 

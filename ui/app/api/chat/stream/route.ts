@@ -159,7 +159,7 @@ interface FileAttachment {
 
 export async function POST(request: NextRequest) {
   try {
-    const { agentId, content, profileId, files } = await request.json();
+    const { agentId, content, profileId, files, selectedAgentIds } = await request.json();
 
     if (!content) {
       return new Response(JSON.stringify({ error: 'Message content is required' }), {
@@ -172,6 +172,7 @@ export async function POST(request: NextRequest) {
 
     // 1. PARALLEL LOADING - Load all context data simultaneously
     // This is much faster than sequential loading
+    // Pass selectedAgentIds for unified chat to combine capabilities
     const {
       context,
       userProfileContext,
@@ -184,6 +185,7 @@ export async function POST(request: NextRequest) {
     } = await loadContextParallel({
       profileId,
       agentId: agentId || 'unified',
+      selectedAgentIds: selectedAgentIds || [],
       userMessage: content,
       files: attachedFiles,
     });

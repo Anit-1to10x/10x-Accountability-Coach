@@ -203,6 +203,47 @@ export async function getAgentPrompts(agentId: string, allPrompts: any[]): Promi
 }
 
 /**
+ * Get combined capabilities from multiple agents (for unified chat)
+ */
+export async function getCombinedAgentCapabilities(agentIds: string[]): Promise<AgentCapabilities> {
+  if (agentIds.length === 0) {
+    // Return defaults if no agents selected
+    const config = await loadAgentCapabilities()
+    return {
+      agentId: 'unified',
+      assignedSkills: config.globalDefaults.defaultSkills,
+      assignedPrompts: config.globalDefaults.defaultPrompts,
+      restrictions: {
+        allowOnlyAssigned: false, // Unified chat allows all
+      },
+      updatedAt: new Date().toISOString(),
+    }
+  }
+
+  // Load capabilities for all selected agents
+  const capabilitiesPromises = agentIds.map(id => getAgentCapabilities(id))
+  const allCapabilities = await Promise.all(capabilitiesPromises)
+
+  // Combine all skills and prompts (remove duplicates)
+  const combinedSkills = [...new Set(allCapabilities.flatMap(c => c.assignedSkills))]
+  const combinedPrompts = [...new Set(allCapabilities.flatMap(c => c.assignedPrompts))]
+
+  // Combine blocked topics from all agents
+  const blockedTopics = [...new Set(allCapabilities.flatMap(c => c.restrictions?.blockedTopics || []))]
+
+  return {
+    agentId: 'unified',
+    assignedSkills: combinedSkills,
+    assignedPrompts: combinedPrompts,
+    restrictions: {
+      allowOnlyAssigned: false, // Unified doesn't restrict
+      blockedTopics: blockedTopics.length > 0 ? blockedTopics : undefined,
+    },
+    updatedAt: new Date().toISOString(),
+  }
+}
+
+/**
  * Build system prompt for an agent including capabilities context
  */
 export function buildAgentSystemPrompt(
