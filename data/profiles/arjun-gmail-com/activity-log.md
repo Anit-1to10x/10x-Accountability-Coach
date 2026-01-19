@@ -1,4 +1,0 @@
-# Activity Log
-
-## Recent Activity
-
