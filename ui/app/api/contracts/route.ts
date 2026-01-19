@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
-import { DATA_DIR } from '@/lib/paths'
+import { DATA_DIR, getProfilePaths } from '@/lib/paths'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const contractsDir = path.join(DATA_DIR, 'contracts')
+    // Get profile ID from query or header
+    const { searchParams } = new URL(request.url)
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+
+    // Use profile-specific path if profileId provided, otherwise fall back to legacy
+    const contractsDir = profileId
+      ? getProfilePaths(profileId).contracts
+      : path.join(DATA_DIR, 'contracts')
     const activeFile = path.join(contractsDir, 'active.json')
 
     try {
@@ -24,7 +31,14 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
 
-    const contractsDir = path.join(DATA_DIR, 'contracts')
+    // Get profile ID from query or header
+    const { searchParams } = new URL(request.url)
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+
+    // Use profile-specific path if profileId provided, otherwise fall back to legacy
+    const contractsDir = profileId
+      ? getProfilePaths(profileId).contracts
+      : path.join(DATA_DIR, 'contracts')
     await fs.mkdir(contractsDir, { recursive: true })
 
     const contract = {

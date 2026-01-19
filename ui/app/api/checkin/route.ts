@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
-import { DATA_DIR, PATHS } from '@/lib/paths'
+import { DATA_DIR, PATHS, getProfilePaths } from '@/lib/paths'
 
 interface CheckInData {
   challengeId?: string
@@ -19,14 +19,21 @@ interface CheckInData {
   }
   completedTasks?: string[]
   tasksCount?: number
+  profileId?: string
 }
 
 export async function POST(request: NextRequest) {
   try {
     const data: CheckInData = await request.json()
 
-    // Ensure checkins directory exists
-    const checkinsDir = path.join(DATA_DIR, 'checkins')
+    // Get profile ID from body, query, or header
+    const { searchParams } = new URL(request.url)
+    const profileId = data.profileId || searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+
+    // Use profile-specific path if profileId provided, otherwise fall back to legacy
+    const checkinsDir = profileId
+      ? getProfilePaths(profileId).checkins
+      : path.join(DATA_DIR, 'checkins')
     await fs.mkdir(checkinsDir, { recursive: true })
 
     // Create check-in file for today
@@ -141,8 +148,12 @@ User checked in on time. ${data.mood! >= 4 ? 'Good momentum.' : data.mood! <= 2 
 
     // Update challenge log
     if (data.challengeId) {
+      // Use profile-specific challenges path if available
+      const challengesDir = profileId
+        ? getProfilePaths(profileId).challenges
+        : PATHS.challenges
       const challengeLogPath = path.join(
-        PATHS.challenges,
+        challengesDir,
         data.challengeId,
         'challenge-log.md'
       )

@@ -422,11 +422,30 @@ export const useTodoStore = create<TodoState>((set) => ({
   },
   toggleTodo: async (id) => {
     try {
-      await fetch(`/api/todos/${id}`, { method: 'PATCH' })
+      // Get current todo to determine new completed state
+      const currentTodo = useTodoStore.getState().todos.find(t => t.id === id)
+      if (!currentTodo) return
+
+      const newCompleted = currentTodo.status !== 'completed'
+      const profileId = getActiveProfileId()
+      const url = addProfileId(`/api/todos/${id}`, profileId)
+
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: newCompleted }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('Failed to toggle todo:', error)
+        return
+      }
+
       set((state) => ({
         todos: state.todos.map((todo) =>
           todo.id === id
-            ? { ...todo, status: todo.status === 'completed' ? 'pending' : 'completed' }
+            ? { ...todo, status: newCompleted ? 'completed' : 'pending', completed: newCompleted }
             : todo
         ),
       }))

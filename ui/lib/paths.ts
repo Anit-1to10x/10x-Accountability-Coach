@@ -26,6 +26,9 @@ export function getProfilePaths(profileId: string) {
     checkins: path.join(profileDir, 'checkins'),
     visionboards: path.join(profileDir, 'visionboards'),
     schedule: path.join(profileDir, 'schedule'),
+    contracts: path.join(profileDir, 'contracts'),
+    punishments: path.join(profileDir, 'punishments'),
+    availability: path.join(profileDir, 'availability.md'),
   }
 }
 

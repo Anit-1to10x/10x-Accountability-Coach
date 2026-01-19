@@ -33,7 +33,7 @@ export function LeftSidebar() {
       {/* Logo Section */}
       <div className="px-6 py-6 border-b border-oa-border">
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-oa-accent via-blue-600 to-blue-700 flex items-center justify-center shadow-lg shadow-oa-accent/20">
+          <div className="w-9 h-9 rounded-lg bg-oa-accent flex items-center justify-center shadow-lg shadow-oa-accent/20">
             <span className="text-white text-sm font-bold">10X</span>
           </div>
           <div>

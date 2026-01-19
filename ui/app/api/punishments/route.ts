@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
 import type { Punishment } from '@/types/streak'
-import { DATA_DIR } from '@/lib/paths'
-
-const PUNISHMENTS_DIR = path.join(DATA_DIR, 'punishments')
-const ACTIVE_FILE = path.join(PUNISHMENTS_DIR, 'active.md')
-const HISTORY_FILE = path.join(PUNISHMENTS_DIR, 'history.md')
+import { DATA_DIR, getProfilePaths } from '@/lib/paths'
 
 interface PunishmentRecord {
   punishment: Punishment
@@ -14,22 +10,34 @@ interface PunishmentRecord {
   challengeName: string
 }
 
-async function ensurePunishmentsDir() {
-  await fs.mkdir(PUNISHMENTS_DIR, { recursive: true })
+function getPunishmentPaths(profileId: string | null) {
+  const punishmentsDir = profileId
+    ? getProfilePaths(profileId).punishments
+    : path.join(DATA_DIR, 'punishments')
+  return {
+    dir: punishmentsDir,
+    activeFile: path.join(punishmentsDir, 'active.md'),
+    historyFile: path.join(punishmentsDir, 'history.md'),
+  }
+}
+
+async function ensurePunishmentsDir(profileId: string | null) {
+  const paths = getPunishmentPaths(profileId)
+  await fs.mkdir(paths.dir, { recursive: true })
 
   // Initialize files if they don't exist
   try {
-    await fs.access(ACTIVE_FILE)
+    await fs.access(paths.activeFile)
   } catch {
-    await fs.writeFile(ACTIVE_FILE, `# Active Punishments
+    await fs.writeFile(paths.activeFile, `# Active Punishments
 
 `, 'utf-8')
   }
 
   try {
-    await fs.access(HISTORY_FILE)
+    await fs.access(paths.historyFile)
   } catch {
-    await fs.writeFile(HISTORY_FILE, `# Punishment History
+    await fs.writeFile(paths.historyFile, `# Punishment History
 
 `, 'utf-8')
   }
@@ -82,13 +90,15 @@ function parsePunishmentsMd(content: string): PunishmentRecord[] {
 // GET: List all active punishments
 export async function GET(request: NextRequest) {
   try {
-    await ensurePunishmentsDir()
-
     const searchParams = request.nextUrl.searchParams
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
     const type = searchParams.get('type') // 'active' or 'history'
     const challengeId = searchParams.get('challengeId')
 
-    let filePath = type === 'history' ? HISTORY_FILE : ACTIVE_FILE
+    await ensurePunishmentsDir(profileId)
+    const paths = getPunishmentPaths(profileId)
+
+    let filePath = type === 'history' ? paths.historyFile : paths.activeFile
     const data = await fs.readFile(filePath, 'utf-8')
     let punishments: PunishmentRecord[] = parsePunishmentsMd(data)
 
@@ -110,7 +120,12 @@ export async function GET(request: NextRequest) {
 // POST: Create a new punishment
 export async function POST(request: NextRequest) {
   try {
-    await ensurePunishmentsDir()
+    const { searchParams } = new URL(request.url)
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+
+    await ensurePunishmentsDir(profileId)
+    const paths = getPunishmentPaths(profileId)
+
     const body = await request.json()
     const { punishment, challengeId, challengeName } = body as {
       punishment: Punishment
@@ -119,7 +134,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Read current active punishments
-    let content = await fs.readFile(ACTIVE_FILE, 'utf-8')
+    let content = await fs.readFile(paths.activeFile, 'utf-8')
 
     // Add new punishment
     const newRecord: PunishmentRecord = {
@@ -146,7 +161,7 @@ export async function POST(request: NextRequest) {
 `
 
     content += punishmentEntry
-    await fs.writeFile(ACTIVE_FILE, content, 'utf-8')
+    await fs.writeFile(paths.activeFile, content, 'utf-8')
 
     // Log to index.md
     try {

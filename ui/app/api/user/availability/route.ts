@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
-import { PATHS } from '@/lib/paths'
+import { PATHS, getProfilePaths } from '@/lib/paths'
 
-const AVAILABILITY_FILE = path.join(PATHS.profile, 'availability.md')
+function getAvailabilityFile(profileId: string | null) {
+  return profileId
+    ? getProfilePaths(profileId).availability
+    : path.join(PATHS.profile, 'availability.md')
+}
 
 // GET: Read user availability preferences
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const content = await fs.readFile(AVAILABILITY_FILE, 'utf-8')
+    const { searchParams } = new URL(request.url)
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+    const availabilityFile = getAvailabilityFile(profileId)
+
+    const content = await fs.readFile(availabilityFile, 'utf-8')
 
     // Parse availability data
     const slotsMatch = content.match(/## Available Time Slots\n\n([\s\S]+?)(?:\n##|$)/)
@@ -55,6 +63,10 @@ export async function GET() {
 // POST: Save user availability preferences
 export async function POST(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+    const availabilityFile = getAvailabilityFile(profileId)
+
     const body = await request.json()
     const { availableSlots, dailyHours, preferences } = body
 
@@ -66,7 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure profile directory exists
-    await fs.mkdir(path.dirname(AVAILABILITY_FILE), { recursive: true })
+    await fs.mkdir(path.dirname(availabilityFile), { recursive: true })
 
     // Create availability file
     const content = `# User Availability
@@ -92,7 +104,7 @@ ${Object.entries(preferences || {})
 This profile helps the system schedule your tasks and challenges optimally.
 `
 
-    await fs.writeFile(AVAILABILITY_FILE, content, 'utf-8')
+    await fs.writeFile(availabilityFile, content, 'utf-8')
 
     // Log to index.md
     try {
@@ -130,6 +142,10 @@ This profile helps the system schedule your tasks and challenges optimally.
 // PUT: Update existing availability
 export async function PUT(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+    const availabilityFile = getAvailabilityFile(profileId)
+
     const body = await request.json()
     const { availableSlots, dailyHours, preferences } = body
 
@@ -139,7 +155,7 @@ export async function PUT(request: NextRequest) {
     let existingPreferences: Record<string, any> = {}
 
     try {
-      const existingContent = await fs.readFile(AVAILABILITY_FILE, 'utf-8')
+      const existingContent = await fs.readFile(availabilityFile, 'utf-8')
 
       const slotsMatch = existingContent.match(/## Available Time Slots\n\n([\s\S]+?)(?:\n##|$)/)
       if (slotsMatch) {
@@ -184,7 +200,7 @@ ${Object.entries(updatedPreferences)
 This profile helps the system schedule your tasks and challenges optimally.
 `
 
-    await fs.writeFile(AVAILABILITY_FILE, content, 'utf-8')
+    await fs.writeFile(availabilityFile, content, 'utf-8')
 
     // Log to index.md
     try {
