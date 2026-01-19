@@ -48,31 +48,60 @@ export async function POST(request: NextRequest) {
     // Create skill directory
     await fs.mkdir(skillPath, { recursive: true })
 
-    // Create SKILL.md file
-    const skillMdContent = `# ${name}
+    // Create SKILL.md file with proper frontmatter format (compatible with skillParser)
+    const triggersYaml = triggers && triggers.length > 0
+      ? triggers.join(', ')
+      : ''
 
-## Description
+    const skillMdContent = `---
+name: ${name}
+description: ${description.replace(/\n/g, ' ').substring(0, 200)}
+category: ${category || 'custom'}
+${triggersYaml ? `triggers: ${triggersYaml}` : ''}
+version: 1.0.0
+author: ${createdByAgentId}
+isCustom: true
+---
+
+# ${name}
+
 ${description}
 
-## Category
-${category || 'custom'}
+---
 
-## Triggers
-${triggers && triggers.length > 0 ? triggers.map(t => `- ${t}`).join('\n') : '- (No automatic triggers)'}
+## Quick Start
+
+**Trigger phrases:**
+${triggers && triggers.length > 0 ? triggers.map(t => `- "${t}"`).join('\n') : '- (No automatic triggers configured)'}
+
+---
 
 ## Instructions
 
 ${instructions}
 
+---
+
 ## Examples
 
 ${examples && examples.length > 0 ? examples.map((ex, i) => `### Example ${i + 1}
-${ex}`).join('\n\n') : 'No examples provided.'}
+
+${ex}`).join('\n\n') : '_No examples provided._'}
 
 ---
 
-**Created by:** ${createdByAgentId}
-**Created at:** ${new Date().toISOString()}
+## Metadata
+
+| Field | Value |
+|-------|-------|
+| **Category** | ${category || 'custom'} |
+| **Created by** | ${createdByAgentId} |
+| **Created at** | ${new Date().toISOString()} |
+| **Version** | 1.0.0 |
+
+---
+
+*This skill was created through the 10X Accountability Coach skill creator.*
 `
 
     await fs.writeFile(path.join(skillPath, 'SKILL.md'), skillMdContent)
