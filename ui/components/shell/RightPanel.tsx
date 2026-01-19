@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useChallengeStore, useTodoStore } from '@/lib/store'
 import { ChevronDown, ChevronRight, Calendar, Clock, Target, Flame, CheckCircle2, Circle } from 'lucide-react'
@@ -12,21 +12,31 @@ export function RightPanel() {
   const { todos, loadTodos } = useTodoStore()
   const [expandedNextDay, setExpandedNextDay] = useState(false)
   const [challengeTasks, setChallengeTasks] = useState<any[]>([])
+  const hasLoaded = useRef(false)
 
   useEffect(() => {
-    loadChallenges()
-    loadTodos()
-    loadChallengeTasks()
+    // Only load once on initial mount
+    if (!hasLoaded.current) {
+      hasLoaded.current = true
+      // Only load if stores are empty
+      if (!challenges || challenges.length === 0) loadChallenges()
+      if (!todos || todos.length === 0) loadTodos()
+      loadChallengeTasks()
+    }
   }, [])
 
   // Load challenge tasks from plan.md files
   const loadChallengeTasks = async () => {
     try {
-      const tasksRes = await fetch('/api/todos/from-challenges')
-      const tasksData = await tasksRes.json()
-
-      const challengesRes = await fetch('/api/challenges')
-      const challengesData = await challengesRes.json()
+      // Fetch in parallel for faster loading
+      const [tasksRes, challengesRes] = await Promise.all([
+        fetch('/api/todos/from-challenges'),
+        fetch('/api/challenges')
+      ])
+      const [tasksData, challengesData] = await Promise.all([
+        tasksRes.json(),
+        challengesRes.json()
+      ])
       const challengesList = challengesData.challenges || []
 
       // Calculate dates for each task based on challenge start date
