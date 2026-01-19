@@ -122,6 +122,8 @@ interface ChatState {
   markMessageAnswered: (agentId: string, messageIndex: number) => void
   loadHistory: (agentId: string) => Promise<void>
   sendMessage: (agentId: string, content: string, attachments?: File[]) => Promise<void>
+  clearMessages: (agentId: string) => void
+  loadSessionMessages: (agentId: string, messages: ChatMessage[]) => void
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -197,6 +199,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch (error) {
       console.error('Failed to load chat history:', error)
     }
+  },
+  clearMessages: (agentId) => {
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [agentId]: [],
+      },
+    }))
+  },
+  loadSessionMessages: (agentId, messages) => {
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [agentId]: messages,
+      },
+    }))
   },
   sendMessage: async (agentId, content, attachments) => {
     const message: ChatMessage = {

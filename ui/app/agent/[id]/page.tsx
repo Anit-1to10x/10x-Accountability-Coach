@@ -8,7 +8,7 @@ import { FileViewer } from '@/components/agent/FileViewer'
 import { FileEditor } from '@/components/agent/FileEditor'
 import { Capabilities } from '@/components/agent/Capabilities'
 import { VisionBoard } from '@/components/agent/VisionBoard'
-import { UnifiedChat } from '@/components/chat'
+import { ChatWithSidebar } from '@/components/chat'
 import { DailyCheckIn } from '@/components/checkin/DailyCheckIn'
 import { SkillCreator } from '@/components/skills/SkillCreator'
 import { ArrowLeft, Menu, X } from 'lucide-react'
@@ -263,13 +263,18 @@ What specific goal would you like to work towards? The more details you share, t
               <FileViewer content={fileContent} path={selectedFile} />
             )
           ) : (
-            <div className="p-6 max-w-4xl mx-auto space-y-8">
-              <VisionBoard agent={agent} />
-              <UnifiedChat
-                agent={agent}
-                onCheckinClick={() => setShowCheckIn(true)}
-                onCreateSkillClick={() => setShowSkillCreator(true)}
-              />
+            <div className="h-full flex flex-col">
+              <div className="p-6 max-w-4xl mx-auto">
+                <VisionBoard agent={agent} />
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <ChatWithSidebar
+                  agent={agent}
+                  onCheckinClick={() => setShowCheckIn(true)}
+                  onCreateSkillClick={() => setShowSkillCreator(true)}
+                  showSidebar={true}
+                />
+              </div>
             </div>
           )}
         </div>
