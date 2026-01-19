@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { CalendarEnhanced } from '@/components/schedule/CalendarEnhanced'
 import { addProfileId, useProfileId } from '@/lib/useProfileId'
 
@@ -8,29 +8,38 @@ export default function SchedulePage() {
   const [events, setEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const profileId = useProfileId()
+  const hasLoaded = useRef(false)
+  const lastProfileId = useRef(profileId)
 
   useEffect(() => {
-    loadEvents()
+    // Only load if not loaded yet, or if profileId changed
+    if (!hasLoaded.current || lastProfileId.current !== profileId) {
+      hasLoaded.current = true
+      lastProfileId.current = profileId
+      loadEvents()
+    }
   }, [profileId])
 
   const loadEvents = async () => {
     try {
       setLoading(true)
 
-      // Load challenge tasks from MD files
-      const challengeTasksRes = await fetch('/api/todos/from-challenges')
-      const challengeTasksData = await challengeTasksRes.json()
-      const challengeTasks = challengeTasksData.tasks || []
-
-      // Load regular todos
+      // Load all data in parallel for faster loading
       const todosUrl = addProfileId('/api/todos', profileId)
-      const todosRes = await fetch(todosUrl)
-      const todosData = await todosRes.json()
-      const todos = Array.isArray(todosData) ? todosData : []
+      const [challengeTasksRes, todosRes, challengesRes] = await Promise.all([
+        fetch('/api/todos/from-challenges'),
+        fetch(todosUrl),
+        fetch('/api/challenges')
+      ])
 
-      // Load challenges for start date info
-      const challengesRes = await fetch('/api/challenges')
-      const challengesData = await challengesRes.json()
+      const [challengeTasksData, todosData, challengesData] = await Promise.all([
+        challengeTasksRes.json(),
+        todosRes.json(),
+        challengesRes.json()
+      ])
+
+      const challengeTasks = challengeTasksData.tasks || []
+      const todos = Array.isArray(todosData) ? todosData : []
       const challenges = challengesData.challenges || []
 
       // Convert challenge tasks to calendar events

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAgentStore, useTodoStore, useNavigationStore } from '@/lib/store'
 import { AgentCard } from '@/components/sidebar/AgentCard'
@@ -14,10 +14,15 @@ export function LeftSidebar() {
   const { agents, activeAgentId, setActiveAgent, loadAgents } = useAgentStore()
   const { todos, loadTodos } = useTodoStore()
   const { setActive } = useNavigationStore()
+  const hasLoaded = useRef(false)
 
   useEffect(() => {
-    loadAgents()
-    loadTodos()
+    // Only load once on initial mount, not on every navigation
+    if (!hasLoaded.current) {
+      hasLoaded.current = true
+      loadAgents()
+      loadTodos()
+    }
   }, [])
 
   const pendingTodos = Array.isArray(todos) ? todos.filter(t => t.status !== 'completed').length : 0

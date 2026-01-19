@@ -61,9 +61,13 @@ export default function ChallengesPage() {
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'active' | 'paused' | 'completed' | 'failed'>('all')
+  const hasLoaded = React.useRef(false)
 
   useEffect(() => {
-    loadChallenges()
+    if (!hasLoaded.current) {
+      hasLoaded.current = true
+      loadChallenges()
+    }
   }, [])
 
   const loadChallenges = async () => {

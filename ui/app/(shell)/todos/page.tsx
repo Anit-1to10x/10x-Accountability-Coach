@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useTodoStore } from '@/lib/store'
 import { Input, Button, Card } from '@/components/ui'
@@ -10,9 +10,14 @@ import Link from 'next/link'
 export default function TodosPage() {
   const { todos, loadTodos, addTodo, toggleTodo } = useTodoStore()
   const [newTodoTitle, setNewTodoTitle] = useState('')
+  const hasLoaded = useRef(false)
 
   useEffect(() => {
-    loadTodos()
+    // Only load if store is empty or hasn't been loaded yet
+    if (!hasLoaded.current && (!todos || todos.length === 0)) {
+      hasLoaded.current = true
+      loadTodos()
+    }
   }, [])
 
   const handleAddTodo = async () => {
