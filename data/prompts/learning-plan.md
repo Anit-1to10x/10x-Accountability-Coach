@@ -15,7 +15,7 @@ Let's create your learning plan, {{name}}.
 
 **Step 1: Define the Skill**
 What specifically do you want to learn?
-- Be precise: not "coding" but "React frontend development"
+- Be precise: not vague terms but specific technologies or domains
 - Why this skill? How does it serve your goals?
 
 **Step 2: Set Your Target Level**

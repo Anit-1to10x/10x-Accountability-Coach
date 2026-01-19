@@ -1,3 +1,15 @@
+/**
+ * Gemini API Client - Media Generation Only
+ *
+ * IMPORTANT: This module should ONLY be used for creative media generation:
+ * - Image generation (Imagen)
+ * - Video generation (Veo)
+ * - Audio generation (coming soon)
+ *
+ * For text generation (motivation, quotes, summaries, chat), use OpenAnalyst API.
+ * See: lib/api/openanalyst-client.ts
+ */
+
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import fs from 'fs/promises'
 import path from 'path'
@@ -6,6 +18,7 @@ import { SHARED_PATHS, getProfilePaths } from './paths'
 const apiKey = process.env.GEMINI_API_KEY || ''
 const genAI = new GoogleGenerativeAI(apiKey)
 const imageModel = process.env.GEMINI_IMAGE_MODEL || 'imagen-3.0-generate-001'
+const videoModel = process.env.GEMINI_VIDEO_MODEL || 'veo-3.1'
 
 // Types
 interface ImageGenerationOptions {
@@ -359,39 +372,189 @@ IMPROVEMENTS: [specific suggestions, or "None needed" if excellent]`
   }
 }
 
+// Video Generation Types
+interface VideoGenerationOptions {
+  duration?: number // seconds (default 8)
+  resolution?: '720p' | '1080p' | '4k'
+  aspectRatio?: '16:9' | '9:16'
+  saveToAssets?: boolean
+  profileId?: string
+  category?: string
+  customFilename?: string
+}
+
+interface VideoGenerationResult {
+  success: boolean
+  filepath?: string
+  filename?: string
+  url?: string
+  videoData?: string
+  prompt: string
+  error?: string
+  taskId?: string
+  status?: 'pending' | 'processing' | 'completed' | 'failed'
+}
+
 /**
- * Generate personalized motivation using context
+ * Generate video using Gemini Veo API
+ * Note: This is an async operation - video generation takes time
  */
-export async function generateMotivation(context: {
-  challengeName: string
-  currentStreak: number
-  recentWins: string[]
-  goals: string[]
-}): Promise<string> {
+export async function generateVideo(
+  prompt: string,
+  options: VideoGenerationOptions = {}
+): Promise<VideoGenerationResult> {
+  const {
+    duration = 8,
+    resolution = '1080p',
+    aspectRatio = '16:9',
+    saveToAssets = true,
+    profileId,
+    category = 'videos',
+    customFilename,
+  } = options
+
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' })
+    if (!apiKey) {
+      return {
+        success: false,
+        error: 'GEMINI_API_KEY not configured. Please add it to your .env.local file.',
+        prompt,
+      }
+    }
 
-    const prompt = `You are an accountability coach. Generate a personalized motivational message.
+    // Use Veo API for video generation
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${videoModel}:generateVideo?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: { text: prompt },
+          duration,
+          resolution,
+          aspectRatio,
+        }),
+      }
+    )
 
-Challenge: ${context.challengeName}
-Current Streak: ${context.currentStreak} days
-Recent Wins: ${context.recentWins.join(', ')}
-Goals: ${context.goals.join(', ')}
+    if (!response.ok) {
+      const errorData = await response.json()
+      return {
+        success: false,
+        error: errorData.error?.message || 'Video generation failed',
+        prompt,
+      }
+    }
 
-Create a motivational message that:
-1. References their specific achievements (no generic quotes!)
-2. Connects past wins to future goals
-3. Is encouraging but realistic
-4. Uses their actual streak number
-5. Is 2-3 sentences max
+    const data = await response.json()
 
-Return only the motivational message.`
+    // Video generation is async - return task ID for polling
+    if (data.name) {
+      return {
+        success: true,
+        taskId: data.name,
+        status: 'processing',
+        prompt,
+      }
+    }
 
-    const result = await model.generateContent(prompt)
-    return result.response.text()
+    // If video is ready immediately
+    if (data.generatedVideos?.[0]?.video) {
+      const videoData = data.generatedVideos[0].video
+      const videoBuffer = Buffer.from(videoData, 'base64')
+
+      if (saveToAssets) {
+        let videosDir: string
+        if (profileId) {
+          const profilePaths = getProfilePaths(profileId)
+          videosDir = path.join(profilePaths.profile, category)
+        } else {
+          videosDir = path.join(SHARED_PATHS.assets, category)
+        }
+
+        await fs.mkdir(videosDir, { recursive: true })
+        const filename = customFilename || `generated-${Date.now()}.mp4`
+        const filepath = path.join(videosDir, filename)
+        await fs.writeFile(filepath, videoBuffer)
+
+        return {
+          success: true,
+          filepath,
+          filename,
+          url: `/api/assets/${category}/${filename}`,
+          status: 'completed',
+          prompt,
+        }
+      }
+
+      return {
+        success: true,
+        videoData,
+        status: 'completed',
+        prompt,
+      }
+    }
+
+    return {
+      success: false,
+      error: 'Unexpected response from video generation API',
+      prompt,
+    }
   } catch (error) {
-    console.error('Motivation generation error:', error)
-    throw error
+    console.error('Video generation error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Video generation failed',
+      prompt,
+    }
+  }
+}
+
+/**
+ * Check video generation status
+ */
+export async function checkVideoStatus(taskId: string): Promise<VideoGenerationResult> {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/${taskId}?key=${apiKey}`
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      return {
+        success: false,
+        error: errorData.error?.message || 'Failed to check video status',
+        prompt: '',
+        taskId,
+      }
+    }
+
+    const data = await response.json()
+
+    if (data.done && data.response?.generatedVideos?.[0]) {
+      return {
+        success: true,
+        videoData: data.response.generatedVideos[0].video,
+        status: 'completed',
+        prompt: '',
+        taskId,
+      }
+    }
+
+    return {
+      success: true,
+      status: data.done ? 'completed' : 'processing',
+      prompt: '',
+      taskId,
+    }
+  } catch (error) {
+    console.error('Video status check error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to check video status',
+      prompt: '',
+      taskId,
+    }
   }
 }
 
@@ -498,13 +661,24 @@ export function isGeminiConfigured(): boolean {
 
 /**
  * Get Gemini capabilities
+ *
+ * Note: Gemini is ONLY used for media generation (images, videos, audio).
+ * Text generation (motivation, quotes, summaries) uses OpenAnalyst API.
  */
 export function getGeminiCapabilities() {
   return {
+    // Media generation capabilities (Gemini)
     imageGeneration: !!apiKey,
     imageAnalysis: !!apiKey,
-    textGeneration: !!apiKey,
+    videoGeneration: !!apiKey,
     visionBoardGeneration: !!apiKey,
-    configuredModel: imageModel,
+
+    // Models
+    imageModel,
+    videoModel,
+
+    // Note: Text generation should use OpenAnalyst
+    // See: lib/api/openanalyst-client.ts
+    textGeneration: false, // Disabled - use OpenAnalyst instead
   }
 }

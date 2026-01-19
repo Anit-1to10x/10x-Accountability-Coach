@@ -2,16 +2,61 @@
  * Streaming Chat API Route
  *
  * Provides streaming chat responses using the OpenAnalyst API.
- * Features dynamic prompt matching for optimized, context-aware responses.
+ * Features:
+ * - Dynamic prompt matching for optimized, context-aware responses
+ * - MCP integration for external tool calls
+ * - Sandbox code execution capability
+ * - Tool call streaming to UI
  */
 
 import { NextRequest } from 'next/server';
 import { chatStream, createSSETextStream } from '@/lib/api/openanalyst-client';
 import { buildContext, buildSystemPrompt, buildEnhancedSystemPrompt } from '@/lib/api/context-builder';
 import { matchSkill } from '@/lib/api/skills-manager';
+import { getToolsForLLM, executeToolCall } from '@/lib/mcp/manager';
+import { executeCode, formatResultForLLM } from '@/lib/sandbox/executor';
+import type { MCPToolCall } from '@/types/mcp';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// Built-in tools for the LLM
+const BUILT_IN_TOOLS = [
+  {
+    type: 'function',
+    function: {
+      name: 'execute_code',
+      description: 'Execute code in a sandboxed environment. Use this to run calculations, data processing, or verify code snippets. Returns the execution output.',
+      parameters: {
+        type: 'object',
+        properties: {
+          language: {
+            type: 'string',
+            enum: ['javascript', 'typescript', 'python', 'shell'],
+            description: 'Programming language to execute',
+          },
+          code: {
+            type: 'string',
+            description: 'The code to execute',
+          },
+        },
+        required: ['language', 'code'],
+      },
+    },
+  },
+];
+
+// Handle built-in tool execution
+async function executeBuiltInTool(name: string, args: Record<string, any>): Promise<string> {
+  if (name === 'execute_code') {
+    const result = await executeCode({
+      language: args.language,
+      code: args.code,
+    });
+    return formatResultForLLM(result);
+  }
+  return `Unknown tool: ${name}`;
+}
 
 // Patterns to detect tasks that benefit from specific APIs
 const WEB_SEARCH_PATTERNS = [
@@ -122,7 +167,8 @@ export async function POST(request: NextRequest) {
 
     // 4. Build enhanced system prompt with dynamic prompt matching
     // This selects the best prompts based on user's message content
-    const { systemPrompt: enhancedPrompt, matchedPrompts } = await buildEnhancedSystemPrompt(
+    // Also uses agent capabilities to filter which prompts/skills are available
+    const { systemPrompt: enhancedPrompt, matchedPrompts, agentCapabilities } = await buildEnhancedSystemPrompt(
       context,
       content,
       agentId || 'unified',
@@ -135,7 +181,25 @@ export async function POST(request: NextRequest) {
       systemPrompt += `\n\nNote: The user is asking about ${apiSuggestion.type.replace('_', ' ')}. The ${apiSuggestion.suggestedApi} API is not configured, so provide the best response possible with available information, but mention that results could be improved by configuring the ${apiSuggestion.suggestedApi} API.`;
     }
 
-    // 5. Call OpenAnalyst API with streaming
+    // 5. Get available tools (MCP + built-in)
+    let availableTools: any[] = [...BUILT_IN_TOOLS];
+    try {
+      const mcpTools = await getToolsForLLM();
+      availableTools = [...availableTools, ...mcpTools];
+    } catch (err) {
+      console.warn('[chat/stream] Failed to load MCP tools:', err);
+    }
+
+    // Add tools context to system prompt if tools are available
+    if (availableTools.length > 0) {
+      systemPrompt += `\n\n## Available Tools
+You have access to ${availableTools.length} tool(s). Use them when appropriate to help the user:
+${availableTools.map(t => `- ${t.function.name}: ${t.function.description}`).join('\n')}
+
+When using tools, the results will be shown to the user in real-time.`;
+    }
+
+    // 6. Call OpenAnalyst API with streaming
     const apiStream = await chatStream(
       [{ role: 'user', content }],
       systemPrompt
@@ -188,6 +252,18 @@ export async function POST(request: NextRequest) {
               reasoning: matchedPrompts.primary.prompt.reasoning || 'standard',
             })}\n\n`;
             controller.enqueue(encoder.encode(promptEvent));
+          }
+
+          // Send available tools info
+          if (availableTools.length > 0) {
+            const toolsEvent = `data: ${JSON.stringify({
+              type: 'tools_available',
+              tools: availableTools.map(t => ({
+                name: t.function.name,
+                description: t.function.description,
+              })),
+            })}\n\n`;
+            controller.enqueue(encoder.encode(toolsEvent));
           }
 
           // Send start event

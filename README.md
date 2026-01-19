@@ -2,16 +2,19 @@
 
 **Your Personal AI-Powered Accountability System by Team 10X**
 
-A self-contained accountability coaching app with AI-powered chat, challenge tracking, and personalized coaching.
+A comprehensive accountability coaching platform with AI-powered chat, challenge tracking, and personalized coaching. Built with Next.js 14, TypeScript, and the OpenAnalyst API.
 
 ## Features
 
-- **AI Chat** - Streaming responses powered by OpenAnalyst API
+- **AI Chat** - Streaming responses powered by OpenAnalyst API with transparent status updates
 - **Challenge Tracking** - Create and track 30-day challenges with daily tasks
-- **Streak Tracking** - Visual progress with milestones
+- **Streak Tracking** - Visual progress with milestones and achievements
 - **Daily Check-ins** - Mood tracking, wins/blockers, task completion
 - **Skills System** - 20+ skills for structured coaching operations
 - **Slash Commands** - Quick actions like `/streak`, `/streak-new`
+- **MCP Integration** - Model Context Protocol support for extensibility
+- **Sandbox Execution** - Safe code execution environment for AI responses
+- **Agent System** - Multiple AI agents with configurable capabilities
 
 ## Quick Start
 
@@ -32,8 +35,9 @@ If you have [Claude Code](https://claude.ai/claude-code) installed:
 
 ```bash
 git clone https://github.com/Anit-1to10x/10x-Accountabilty-Coach.git
-cd 10x-Accoutability-Coach
+cd 10x-Accountability-Coach
 npm install
+cd ui && npm install
 ```
 
 ### 2. Configure API Key (Required)
@@ -50,17 +54,7 @@ Create `ui/.env.local` file:
 OPENANALYST_API_URL=https://api.openanalyst.com/api
 OPENANALYST_API_KEY=sk-oa-v1-YOUR-ACTUAL-API-KEY-HERE
 OPENANALYST_MODEL=openanalyst-beta
-
-# Gemini AI (Optional - for image generation)
-# GEMINI_API_KEY=your-gemini-key-here
 ```
-
-#### Step 3: Replace the Placeholder
-**IMPORTANT:** Replace `sk-oa-v1-YOUR-ACTUAL-API-KEY-HERE` with your real API key from the email.
-
-Your API key looks like: `sk-oa-v1-xxxxxxxxxxxxxxxxxxxxxxxx`
-
-> **Note:** The `.env.local` file is git-ignored and will NOT be pushed to GitHub. Your API key stays private.
 
 ### 3. Start the App
 
@@ -70,58 +64,170 @@ npm start
 
 Open **http://localhost:3000** - Your 10X Coach is ready!
 
-The app will:
-- Check and install dependencies automatically
-- Prompt for API key if not configured
-- Start the Next.js UI
+- Landing page: http://localhost:3000/landing
+- Main app: http://localhost:3000/app
 
 ## Architecture
 
+### High-Level Flow
+
 ```
-User (UI) → Next.js API Route → OpenAnalyst API → Streaming Response → UI
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           10X Accountability Coach                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌──────────┐    ┌──────────────┐    ┌───────────────┐    ┌──────────┐ │
+│  │  User    │───▶│  Next.js UI  │───▶│  API Routes   │───▶│ OpenAI   │ │
+│  │  (Chat)  │◀───│  (React)     │◀───│  (Streaming)  │◀───│ API      │ │
+│  └──────────┘    └──────────────┘    └───────────────┘    └──────────┘ │
+│                         │                    │                          │
+│                         ▼                    ▼                          │
+│                  ┌──────────────┐    ┌───────────────┐                  │
+│                  │   Zustand    │    │   Sandbox     │                  │
+│                  │   Store      │    │   Executor    │                  │
+│                  └──────────────┘    └───────────────┘                  │
+│                                              │                          │
+│                                              ▼                          │
+│                                      ┌───────────────┐                  │
+│                                      │  MCP Manager  │                  │
+│                                      │  (Tools)      │                  │
+│                                      └───────────────┘                  │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Self-contained** - No second terminal, no WebSocket server, no manual setup.
+### Core Components
+
+#### 1. Chat Stream API (`ui/app/api/chat/stream/route.ts`)
+- Server-Sent Events (SSE) streaming
+- Skill matching and prompt selection
+- MCP tool integration
+- Sandbox code execution
+- Phase-based status updates (thinking, generating, executing, etc.)
+
+#### 2. Streaming Status (`ui/components/chat/StreamingStatus.tsx`)
+- Transparent status display like Claude Code
+- Shows: Thinking, Matching Skill, Executing Tool, Generating
+- Animated indicators with phase-specific icons
+
+#### 3. MCP Integration (`ui/lib/mcp/`)
+- **client.ts**: MCP server connection (stdio, HTTP, SSE)
+- **manager.ts**: Tool execution and management
+- Supports Supabase, GitHub, Filesystem, and more
+
+#### 4. Sandbox Executor (`ui/lib/sandbox/executor.ts`)
+- Isolated code execution environment
+- Supports JavaScript, TypeScript, Python, Shell
+- Security blocklist for dangerous commands
+- Output truncation and timeout handling
+
+#### 5. Agent System (`ui/types/agent.ts`, `ui/app/api/agents/`)
+- Multiple AI agents with configurable capabilities
+- Skills, prompts, personality, and restrictions per agent
+- Agent-specific chat interfaces
+
+### State Management
+
+Using Zustand for global state:
+
+```typescript
+// Key stores in ui/lib/store.ts
+- useChatStore: Messages, typing status, streaming phase
+- useAgentStore: Agent list and active agent
+- useNavigationStore: Active route/selection
+- useTodoStore: Task management
+- useChallengeStore: Challenge tracking
+- useOnboardingStore: User onboarding flow
+```
+
+### Streaming Phases
+
+The chat system uses phase-based status updates:
+
+| Phase | Description |
+|-------|-------------|
+| `idle` | Ready for input |
+| `thinking` | Processing request |
+| `matching_skill` | Finding relevant skill |
+| `matching_prompt` | Selecting framework |
+| `loading_tools` | Loading MCP tools |
+| `executing_tool` | Running tool call |
+| `executing_code` | Sandbox execution |
+| `generating` | Streaming response |
+| `complete` | Response finished |
 
 ## Project Structure
 
 ```
-10X-accountability-coach/
-├── ui/                     # Next.js frontend
-│   ├── app/                # Pages & API routes
-│   │   ├── api/chat/stream # Streaming chat endpoint
-│   │   ├── (shell)/        # Main app routes
-│   │   └── onboarding/     # First-time setup
-│   ├── components/         # React components
-│   └── lib/                # Utilities & stores
-│       └── api/            # API client & context builder
+10X-Accountability-Coach/
+├── ui/                          # Next.js 14 frontend
+│   ├── app/                     # App router pages
+│   │   ├── api/                 # API routes
+│   │   │   ├── chat/stream/     # SSE streaming endpoint
+│   │   │   ├── agents/          # Agent management
+│   │   │   ├── challenges/      # Challenge CRUD
+│   │   │   ├── config/env/      # Environment management
+│   │   │   └── sandbox/execute/ # Code execution
+│   │   ├── (shell)/             # Main app layout
+│   │   │   ├── app/             # Chat interface
+│   │   │   ├── settings/        # User settings
+│   │   │   ├── streak/          # Challenge tracking
+│   │   │   └── todos/           # Task management
+│   │   └── onboarding/          # First-time setup
+│   │
+│   ├── components/              # React components
+│   │   ├── chat/                # Chat UI components
+│   │   │   ├── UnifiedChat.tsx  # Main chat interface
+│   │   │   ├── StreamingStatus.tsx # Status indicators
+│   │   │   └── ChatMessage.tsx  # Message display
+│   │   ├── settings/            # Settings components
+│   │   └── ui/                  # Shared UI components
+│   │
+│   ├── lib/                     # Utilities
+│   │   ├── api/                 # API clients
+│   │   ├── mcp/                 # MCP integration
+│   │   │   ├── client.ts        # MCP client
+│   │   │   └── manager.ts       # Tool management
+│   │   ├── sandbox/             # Code execution
+│   │   │   └── executor.ts      # Sandbox executor
+│   │   └── store.ts             # Zustand stores
+│   │
+│   ├── types/                   # TypeScript types
+│   │   ├── agent.ts             # Agent definitions
+│   │   ├── mcp.ts               # MCP types
+│   │   └── index.ts             # Shared types
+│   │
+│   └── public/                  # Static assets
+│       └── landing/             # Landing page files
 │
-├── skills/                 # AI Skills (20+)
-├── commands/               # Slash commands
-├── data/                   # User data (file-based)
-│   ├── profiles/           # User profiles
-│   ├── challenges/         # Challenge configs
-│   ├── todos/              # Task lists
-│   └── prompts/            # Dynamic prompts
+├── data/                        # User data (file-based)
+│   ├── profiles/                # User profiles
+│   ├── challenges/              # Challenge configs
+│   └── prompts/                 # Dynamic prompts
 │
-├── scripts/
-│   ├── start-all.js        # Main startup script
-│   └── setup.js            # Interactive setup
+├── skills/                      # AI Skills (20+)
+├── commands/                    # Slash commands
+├── docs/                        # Landing page source
 │
-└── lib/                    # Shared utilities
+├── vercel.json                  # Vercel deployment config
+├── CLAUDE.md                    # Claude Code instructions
+└── README.md                    # This file
 ```
 
 ## Pages & Routes
 
 | Route | Purpose |
 |-------|---------|
+| `/` | Loading screen, redirects to profiles |
+| `/landing` | Marketing landing page |
+| `/profiles` | User profile selection |
 | `/app` | Main chat interface |
 | `/onboarding` | First-time setup |
 | `/schedule` | Calendar view |
 | `/streak` | Challenge tracking |
 | `/todos` | Task list |
 | `/skills` | Skills management |
-| `/settings` | User preferences |
+| `/settings` | User preferences & API keys |
 
 ## Skills & Commands
 
@@ -134,7 +240,7 @@ User (UI) → Next.js API Route → OpenAnalyst API → Streaming Response → U
 - `/streak-insights` - Cross-challenge insights
 
 ### Skill Matching
-The AI automatically matches user messages to relevant skills and provides structured responses.
+The AI automatically matches user messages to relevant skills and provides structured responses with skill-specific behavior.
 
 ## API Configuration
 
@@ -144,35 +250,58 @@ The AI automatically matches user messages to relevant skills and provides struc
 | `OPENANALYST_API_KEY` | Your API key |
 | `OPENANALYST_MODEL` | Model to use |
 
-## Development
+## Deployment
+
+### Vercel Deployment
+
+The project is configured for easy Vercel deployment:
+
+1. Connect your GitHub repository to Vercel
+2. Add environment variables in Vercel dashboard:
+   - `OPENANALYST_API_URL`
+   - `OPENANALYST_API_KEY`
+   - `OPENANALYST_MODEL`
+3. Deploy!
+
+The `vercel.json` configuration handles:
+- Next.js build commands
+- API function timeouts (60s max)
+- Landing page routing
+- Security headers
+- CORS configuration
+
+### Local Development
 
 ```bash
 # Install dependencies
-npm install
+npm install && cd ui && npm install
 
-# Start in development mode
+# Start development server
 npm start
-
-# Or run UI only
+# or
 cd ui && npm run dev
 
-# Run setup wizard
-npm run setup
+# Build for production
+cd ui && npm run build
+
+# Type check
+cd ui && npx tsc --noEmit
 ```
 
 ## Technology Stack
 
 - **Frontend:** Next.js 14, TypeScript, Tailwind CSS, Framer Motion, Zustand
-- **Backend:** Node.js, Next.js API Routes
+- **Backend:** Node.js, Next.js API Routes, Server-Sent Events
 - **AI:** OpenAnalyst API (Anthropic Messages API compatible)
 - **Storage:** File system (Markdown + JSON)
+- **MCP:** Model Context Protocol for tool extensibility
 
 ## Troubleshooting
 
 ### "API Disconnected" in Settings
 If the API shows as disconnected:
 1. **Check your API key** - Open `ui/.env.local` and verify your key is correct
-2. **No placeholder values** - Make sure you replaced `sk-oa-v1-YOUR-ACTUAL-API-KEY-HERE` with your real key
+2. **No placeholder values** - Make sure you replaced the placeholder with your real key
 3. **No extra spaces** - Ensure there are no spaces before/after the key
 4. **Restart the server** - Stop (`Ctrl+C`) and restart (`npm run dev`)
 
@@ -185,12 +314,10 @@ npx kill-port 3000 3001 3002
 cd ui && npm run dev
 ```
 
-### Verify API Connection
-1. Open the app in browser
-2. Go to **Settings** (gear icon)
-3. Check **API Status** section
-4. Green checkmark = Connected
-5. Red X = Check your `.env.local` file
+### Build Errors
+```bash
+cd ui && rm -rf .next && npm run build
+```
 
 ### Environment File Location
 The environment file must be at: `ui/.env.local` (NOT in the project root)

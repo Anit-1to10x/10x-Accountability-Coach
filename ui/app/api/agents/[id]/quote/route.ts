@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { chat } from '@/lib/api/openanalyst-client'
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * Generate personalized motivational quotes using OpenAnalyst API
+ * Note: Gemini is reserved for media generation (images, videos, audio)
+ * All text generation uses OpenAnalyst for consistency
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -10,7 +16,6 @@ export async function POST(
     const body = await request.json()
     const { summary } = body
 
-    // Generate personalized quote using Gemini
     const quote = await generateQuote(summary)
 
     return NextResponse.json({ quote })
@@ -24,12 +29,7 @@ export async function POST(
 }
 
 async function generateQuote(summaryData: any): Promise<string> {
-  try {
-    const { GoogleGenerativeAI } = await import('@google/generative-ai')
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
-
-    const prompt = `You are a motivational quote generator for an accountability coach app. Based on the user's journey data, create ONE powerful, personalized motivational quote.
+  const systemPrompt = `You are a motivational quote generator for an accountability coach app. Based on the user's journey data, create ONE powerful, personalized motivational quote.
 
 User Journey Data:
 Summary: ${summaryData?.summary || 'User is starting their journey'}
@@ -52,18 +52,23 @@ Examples of GOOD personalized quotes:
 - "From zero to 23 check-ins—you've transformed intention into action. Your future self is already thanking you."
 - "Every one of your 47 check-ins was a choice to show up. That dedication is building the life you want."
 
-Generate ONE powerful quote now:`
+Generate ONE powerful quote now.`
 
-    const result = await model.generateContent(prompt)
-    const response = await result.response
-    let quote = response.text().trim()
+  try {
+    const response = await chat(
+      [{ role: 'user', content: 'Generate a personalized motivational quote for me.' }],
+      systemPrompt,
+      { maxTokens: 256 }
+    )
 
-    // Remove quotes if Gemini added them
+    let quote = response.trim()
+
+    // Remove quotes if AI added them
     quote = quote.replace(/^["']|["']$/g, '')
 
     return quote
   } catch (error) {
-    console.error('Gemini API error:', error)
+    console.error('OpenAnalyst API error:', error)
 
     // Fallback quotes based on data
     if (summaryData?.currentStreak >= 7) {

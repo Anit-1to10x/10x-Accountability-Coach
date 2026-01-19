@@ -47,11 +47,11 @@ Build minimum viable:
 
 **Step 5: Tech Stack Decisions**
 Modern AI startup stack:
-- Frontend: Next.js, React
-- Backend: Node, Python
-- AI: OpenAI API, Claude, open source
-- Database: Postgres + Vector DB
-- Infra: Vercel, AWS, Cloud
+- Frontend: Modern JS framework
+- Backend: Python, Node, or your preference
+- AI: OpenAI, Anthropic, or open source models
+- Database: SQL + Vector DB for embeddings
+- Infra: Cloud-native deployment
 
 **Step 6: Go-to-Market**
 - Where do your users hang out?

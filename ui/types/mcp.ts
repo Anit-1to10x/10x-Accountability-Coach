@@ -16,6 +16,7 @@ export interface MCPServer {
   args?: string[]           // For stdio: command arguments
   url?: string              // For http/sse: the server URL
   headers?: Record<string, string>  // For http: custom headers
+  env?: Record<string, string>      // Environment variables for the server
 
   // Status
   enabled: boolean
@@ -39,6 +40,20 @@ export interface MCPTool {
   name: string
   description: string
   inputSchema: Record<string, any>
+  serverId?: string  // Which server this tool belongs to
+}
+
+export interface MCPToolCall {
+  id: string
+  name: string
+  arguments: Record<string, any>
+}
+
+export interface MCPToolResult {
+  toolCallId: string
+  success: boolean
+  result?: any
+  error?: string
 }
 
 export interface MCPResource {

@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, Suspense, lazy } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Users, Clock, Shield, FileText, Download, Trash2, ChevronDown, ChevronRight, Edit2, HelpCircle, BookOpen, Zap, CheckCircle, XCircle, Database, Server, Loader2, Check } from 'lucide-react'
+import { User, Users, Clock, Shield, FileText, Download, Trash2, ChevronDown, ChevronRight, Edit2, HelpCircle, BookOpen, Zap, CheckCircle, XCircle, Database, Server, Loader2, Check, Bot, Key } from 'lucide-react'
 
 // Lazy load heavy components
 const DataSourceToggle = lazy(() => import('@/components/settings/DataSourceToggle').then(mod => ({ default: mod.DataSourceToggle })))
 const MCPManager = lazy(() => import('@/components/settings/MCPManager').then(mod => ({ default: mod.MCPManager })))
+const AgentSettings = lazy(() => import('@/components/settings/AgentSettings').then(mod => ({ default: mod.AgentSettings })))
+const APIKeyManager = lazy(() => import('@/components/settings/APIKeyManager').then(mod => ({ default: mod.APIKeyManager })))
 
 // Loading skeleton component
 function SectionLoader() {
@@ -52,8 +54,10 @@ export default function SettingsPage() {
   } | null>(null)
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     apiStatus: true,
+    apiKeys: false,
     dataStorage: false,
     mcp: false,
+    agentSettings: false,
     profile: true,
     profiles: false,
     onboarding: true,
@@ -358,6 +362,19 @@ PERPLEXITY_API_KEY=xxx`}
           )}
         </Section>
 
+        {/* API Keys Section */}
+        <Section
+          title="API Keys"
+          subtitle="Manage your API keys for AI services"
+          icon={<Key className="w-5 h-5" />}
+          isExpanded={expandedSections.apiKeys}
+          onToggle={() => toggleSection('apiKeys')}
+        >
+          <Suspense fallback={<SectionLoader />}>
+            <APIKeyManager />
+          </Suspense>
+        </Section>
+
         {/* Data Storage Section */}
         <Section
           title="Data Storage"
@@ -381,6 +398,19 @@ PERPLEXITY_API_KEY=xxx`}
         >
           <Suspense fallback={<SectionLoader />}>
             <MCPManager />
+          </Suspense>
+        </Section>
+
+        {/* Agent Settings Section */}
+        <Section
+          title="Agent Settings"
+          subtitle="Configure skills, prompts, and behavior for each agent"
+          icon={<Bot className="w-5 h-5" />}
+          isExpanded={expandedSections.agentSettings}
+          onToggle={() => toggleSection('agentSettings')}
+        >
+          <Suspense fallback={<SectionLoader />}>
+            <AgentSettings />
           </Suspense>
         </Section>
 

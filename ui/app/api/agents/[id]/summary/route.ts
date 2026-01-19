@@ -3,9 +3,15 @@ import fs from 'fs/promises'
 import path from 'path'
 import matter from 'gray-matter'
 import { DATA_DIR } from '@/lib/paths'
+import { chat } from '@/lib/api/openanalyst-client'
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * Generate agent summary using OpenAnalyst API
+ * Note: Gemini is reserved for media generation (images, videos, audio)
+ * All text generation uses OpenAnalyst for consistency
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -222,14 +228,9 @@ function extractMilestones(checkins: any[], challenges: any[]): string[] {
   return milestones.slice(0, 5) // Max 5 milestones
 }
 
-// Generate AI summary using Gemini
+// Generate AI summary using OpenAnalyst API
 async function generateSummary(data: any): Promise<string> {
-  try {
-    const { GoogleGenerativeAI } = await import('@google/generative-ai')
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
-
-    const prompt = `You are analyzing a user's accountability journey with an AI agent. Generate a warm, insightful, and personalized 2-3 paragraph summary of their progress.
+  const systemPrompt = `You are analyzing a user's accountability journey with an AI agent. Generate a warm, insightful, and personalized 2-3 paragraph summary of their progress.
 
 Agent ID: ${data.agentId}
 Total Check-ins: ${data.stats.totalCheckins}
@@ -252,11 +253,16 @@ Write a summary that:
 
 Keep it concise (2-3 paragraphs) and conversational.`
 
-    const result = await model.generateContent(prompt)
-    const response = await result.response
-    return response.text()
+  try {
+    const response = await chat(
+      [{ role: 'user', content: 'Generate a summary of my accountability journey.' }],
+      systemPrompt,
+      { maxTokens: 512 }
+    )
+
+    return response.trim()
   } catch (error) {
-    console.error('Gemini API error:', error)
+    console.error('OpenAnalyst API error:', error)
 
     // Fallback summary
     return `You've been on this journey for ${data.stats.activeDays} active days with ${data.stats.totalCheckins} check-ins completed. Your dedication shows in your ${data.stats.currentStreak}-day current streak.

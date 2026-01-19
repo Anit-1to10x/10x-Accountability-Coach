@@ -83,11 +83,30 @@ export const useAgentStore = create<AgentState>((set) => ({
   },
 }))
 
+// Streaming Phase Types
+export type StreamingPhase =
+  | 'idle'
+  | 'thinking'
+  | 'matching_skill'
+  | 'matching_prompt'
+  | 'loading_tools'
+  | 'executing_tool'
+  | 'executing_code'
+  | 'generating'
+  | 'complete'
+
 // Chat Store
 interface ChatState {
   messages: Record<string, ChatMessage[]> // Keyed by agentId
   isTyping: boolean
+  streamingPhase: StreamingPhase
+  streamingDetails: {
+    toolName?: string
+    skillName?: string
+    promptName?: string
+  }
   setTyping: (isTyping: boolean) => void
+  setStreamingPhase: (phase: StreamingPhase, details?: { toolName?: string; skillName?: string; promptName?: string }) => void
   addMessage: (agentId: string, message: ChatMessage) => void
   updateMessage: (agentId: string, messageId: string, updates: Partial<ChatMessage>) => void
   markMessageAnswered: (agentId: string, messageIndex: number) => void
@@ -98,7 +117,10 @@ interface ChatState {
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: {},
   isTyping: false,
+  streamingPhase: 'idle' as StreamingPhase,
+  streamingDetails: {},
   setTyping: (isTyping) => set({ isTyping }),
+  setStreamingPhase: (phase, details = {}) => set({ streamingPhase: phase, streamingDetails: details }),
   addMessage: (agentId, message) => {
     const { messages } = get()
     set({
@@ -200,6 +222,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       })
 
       set({ isTyping: true })
+      get().setStreamingPhase('thinking')
 
       // Get profile ID from localStorage
       const profileId = typeof window !== 'undefined'
@@ -248,6 +271,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
             switch (data.type) {
               case 'start':
                 // Stream started
+                get().setStreamingPhase('thinking')
+                break
+
+              case 'phase':
+                // Handle streaming phase updates
+                if (data.phase) {
+                  get().setStreamingPhase(data.phase, {
+                    toolName: data.toolName,
+                    skillName: data.skillName,
+                    promptName: data.promptName,
+                  })
+                }
                 break
 
               case 'api_suggestion':
@@ -266,6 +301,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
               case 'chunk':
                 if (data.content) {
                   fullContent += data.content
+                  get().setStreamingPhase('generating')
                   get().updateMessage(agentId, streamingMessageId, {
                     content: fullContent,
                   })
@@ -273,7 +309,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 break
 
               case 'skill_match':
-                // Optional: show skill badge
+                // Show skill badge and update phase
+                get().setStreamingPhase('matching_skill', { skillName: data.skillName })
                 get().updateMessage(agentId, streamingMessageId, {
                   metadata: {
                     isStreaming: true,
@@ -282,8 +319,27 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 })
                 break
 
+              case 'tool_call':
+                // Show tool execution phase
+                get().setStreamingPhase('executing_tool', { toolName: data.toolName })
+                break
+
+              case 'tool_result':
+                // Tool completed, update message with result
+                get().setStreamingPhase('generating')
+                if (data.result) {
+                  get().updateMessage(agentId, streamingMessageId, {
+                    metadata: {
+                      isStreaming: true,
+                      toolResults: data.result,
+                    },
+                  })
+                }
+                break
+
               case 'end':
                 // Streaming complete
+                get().setStreamingPhase('complete')
                 get().updateMessage(agentId, streamingMessageId, {
                   content: fullContent,
                   metadata: {
@@ -292,9 +348,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
                   },
                 })
                 set({ isTyping: false })
+                // Reset phase after a brief delay
+                setTimeout(() => get().setStreamingPhase('idle'), 1000)
                 break
 
               case 'error':
+                get().setStreamingPhase('idle')
                 get().updateMessage(agentId, streamingMessageId, {
                   content: `Error: ${data.error || 'Failed to get response'}`,
                   metadata: {
@@ -326,6 +385,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch (error) {
       console.error('Failed to send message:', error)
       set({ isTyping: false })
+      get().setStreamingPhase('idle')
 
       get().addMessage(agentId, {
         id: `error-${Date.now()}`,

@@ -17,9 +17,9 @@ Let's create your upskilling path, {{name}}.
 
 **1. Software Development**
 Fundamentals → Language → Framework → Projects
-- Start: JavaScript/Python
-- Then: React/Node or Django
-- Build: 3-5 projects
+- Start: Core programming concepts
+- Then: Choose a modern framework
+- Build: 3-5 portfolio projects
 - Timeline: 6-12 months
 
 **2. AI/ML Engineering**

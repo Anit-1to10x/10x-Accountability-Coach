@@ -83,12 +83,6 @@ export function QuickActionsPanel({ agent, onCheckinClick, onCreateSkillClick }:
     }
   }
 
-  const agentCapabilities = agent ? [
-    { label: 'Track Progress', description: 'Monitor your daily check-ins', auto: true },
-    { label: 'Generate Insights', description: 'AI-powered pattern analysis', auto: true },
-    { label: 'Suggest Next Steps', description: 'Smart recommendations', auto: false },
-  ] : []
-
   if (loading) {
     return (
       <div className="w-full p-4 text-center">

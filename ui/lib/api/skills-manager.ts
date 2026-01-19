@@ -3,11 +3,13 @@
  *
  * Loads, matches, and provides skill content based on user messages.
  * Supports both explicit /command invocation and implicit keyword matching.
+ * Integrates with agent-capabilities system for skill filtering.
  */
 
 import fs from 'fs/promises';
 import path from 'path';
 import { SKILLS_DIR, COMMANDS_DIR, SHARED_PATHS } from '../paths';
+import { getAgentCapabilities, canAgentUseSkill } from '../agent-capabilities';
 
 export interface Skill {
   id: string;
@@ -251,26 +253,33 @@ async function ensureCache(): Promise<void> {
 
 /**
  * Get skills available for a specific agent
+ * Uses the agent-capabilities system to determine which skills are assigned
  */
-async function getAgentSkills(agentId: string): Promise<Skill[]> {
+async function getAgentSkillsFiltered(agentId: string): Promise<Skill[]> {
   await ensureCache();
 
-  if (agentId === 'unified') {
-    // Unified chat has access to all skills
-    return Array.from(skillsCache!.values());
+  // Get agent capabilities
+  const capabilities = await getAgentCapabilities(agentId);
+  const allSkills = Array.from(skillsCache!.values());
+
+  // If restrictions are disabled, agent has access to all skills
+  if (!capabilities.restrictions?.allowOnlyAssigned) {
+    return allSkills;
   }
 
-  // Find agent config
-  const agent = agentsCache?.find(a => a.id === agentId);
-
-  if (!agent?.skills?.length) {
-    return [];
+  // If unified agent with no specific restrictions, return all skills
+  if (agentId === 'unified' && capabilities.assignedSkills.length === 0) {
+    return allSkills;
   }
 
-  // Return only assigned skills
-  return agent.skills
-    .map(skillId => skillsCache!.get(skillId))
-    .filter((skill): skill is Skill => skill !== undefined);
+  // Filter skills based on agent capabilities
+  const assignedSkillIds = capabilities.assignedSkills.map(s => s.toLowerCase());
+
+  return allSkills.filter(skill => {
+    const skillId = skill.id.toLowerCase();
+    const skillName = skill.name.toLowerCase().replace(/\s+/g, '-');
+    return assignedSkillIds.includes(skillId) || assignedSkillIds.includes(skillName);
+  });
 }
 
 /**
@@ -310,7 +319,7 @@ function scoreSkillMatch(skill: Skill, message: string): number {
 /**
  * Match user message to skill or command
  * @param message - User message
- * @param agentId - Agent ID for filtering
+ * @param agentId - Agent ID for filtering (uses agent-capabilities system)
  * @returns Matched skill/command or null
  */
 export async function matchSkill(
@@ -326,12 +335,16 @@ export async function matchSkill(
     const commandName = lowerMessage.split(/\s+/)[0].substring(1);
     const command = commandsCache!.get(commandName);
     if (command) {
-      return command;
+      // Verify agent can use this command/skill
+      const canUse = await canAgentUseSkill(agentId, commandName);
+      if (canUse) {
+        return command;
+      }
     }
   }
 
-  // Get available skills for this agent
-  const availableSkills = await getAgentSkills(agentId);
+  // Get available skills for this agent (filtered by capabilities)
+  const availableSkills = await getAgentSkillsFiltered(agentId);
 
   // Score each skill based on trigger matches
   let bestMatch: Skill | null = null;

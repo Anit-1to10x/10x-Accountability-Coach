@@ -4,6 +4,7 @@
  * Builds rich context from user data for AI system prompts.
  * Provides all necessary information for personalized AI responses.
  * Integrates with prompt indexer for dynamic prompt selection.
+ * Includes timezone-aware datetime context and agent capabilities.
  */
 
 import fs from 'fs/promises';
@@ -15,6 +16,13 @@ import {
   PromptMatchResult,
   PromptContent,
 } from './prompt-indexer';
+import { getDateTimeContext } from '../datetime';
+import {
+  getAgentCapabilities,
+  getAgentSkills,
+  getAgentPrompts,
+  AgentCapabilities,
+} from '../agent-capabilities';
 
 export interface UserProfile {
   id: string;
@@ -79,6 +87,15 @@ export interface DayTask {
   duration?: string;
 }
 
+export interface DateTimeContext {
+  date: string;
+  time: string;
+  dayOfWeek: string;
+  greeting: string;
+  dayProgress: number;
+  timezone: string;
+}
+
 export interface UserContext {
   profile: UserProfile | null;
   tasks: {
@@ -108,6 +125,7 @@ export interface UserContext {
   };
   recentCheckins: CheckinRecord[];
   currentDate: string;
+  datetime: DateTimeContext;
 }
 
 /**
@@ -412,10 +430,13 @@ async function loadRecentCheckins(profileId?: string): Promise<CheckinRecord[]> 
 /**
  * Build complete context object from user data
  * @param profileId - The user's profile ID
- * @returns Context object with profile, tasks, challenges, progress, schedule, checkins
+ * @param timezone - Optional timezone override (auto-detected if not provided)
+ * @returns Context object with profile, tasks, challenges, progress, schedule, checkins, datetime
  */
-export async function buildContext(profileId?: string | null): Promise<UserContext> {
-  const today = new Date().toISOString().split('T')[0];
+export async function buildContext(profileId?: string | null, timezone?: string): Promise<UserContext> {
+  // Get timezone-aware datetime context
+  const datetimeCtx = getDateTimeContext(timezone);
+  const today = datetimeCtx.date.split(',')[0] || new Date().toISOString().split('T')[0];
 
   if (!profileId) {
     return {
@@ -426,6 +447,7 @@ export async function buildContext(profileId?: string | null): Promise<UserConte
       schedule: { today: [] },
       recentCheckins: [],
       currentDate: today,
+      datetime: datetimeCtx,
     };
   }
 
@@ -507,6 +529,7 @@ export async function buildContext(profileId?: string | null): Promise<UserConte
     },
     recentCheckins,
     currentDate: today,
+    datetime: datetimeCtx,
   };
 }
 
@@ -681,9 +704,12 @@ export function formatContextSummary(context: UserContext): string {
 
 /**
  * Build an optimized system prompt using dynamic prompt matching
+ * Uses agent capabilities to filter available prompts and skills
+ * Includes timezone-aware datetime context
+ *
  * @param context - User context from buildContext()
  * @param userMessage - The user's message to match prompts against
- * @param agentId - Agent ID for filtering
+ * @param agentId - Agent ID for filtering (determines which prompts/skills are available)
  * @param matchedSkill - Optional skill content
  * @returns Enhanced system prompt with matched prompts
  */
@@ -692,14 +718,36 @@ export async function buildEnhancedSystemPrompt(
   userMessage: string,
   agentId: string = 'unified',
   matchedSkill?: { name: string; body: string } | null
-): Promise<{ systemPrompt: string; matchedPrompts: PromptMatchResult }> {
-  // Match prompts to user message
-  const matchedPrompts = await matchPrompts(userMessage);
+): Promise<{ systemPrompt: string; matchedPrompts: PromptMatchResult; agentCapabilities: AgentCapabilities }> {
+  // Get agent capabilities (which prompts/skills this agent can use)
+  const capabilities = await getAgentCapabilities(agentId);
 
-  // Prepare template context for rendering
+  // Match prompts to user message
+  let matchedPrompts = await matchPrompts(userMessage);
+
+  // Filter matched prompts based on agent capabilities
+  if (capabilities.restrictions?.allowOnlyAssigned && matchedPrompts.primary) {
+    const promptId = matchedPrompts.primary.prompt.id ||
+      matchedPrompts.primary.prompt.name?.toLowerCase().replace(/\s+/g, '-');
+
+    if (!capabilities.assignedPrompts.includes(promptId)) {
+      // Primary prompt not allowed for this agent - clear it
+      matchedPrompts = {
+        ...matchedPrompts,
+        primary: null,
+      };
+    }
+  }
+
+  // Prepare template context for rendering (dynamic based on user profile)
   const templateContext = {
     name: context.profile?.name || 'User',
-    today_date: context.currentDate,
+    today_date: context.datetime?.date || context.currentDate,
+    time: context.datetime?.time || '',
+    timezone: context.datetime?.timezone || 'UTC',
+    greeting: context.datetime?.greeting || 'Hello',
+    day_of_week: context.datetime?.dayOfWeek || '',
+    day_progress: String(context.datetime?.dayProgress || 0),
     active_challenges: String(context.challenges?.count || 0),
     pending_tasks: String(context.tasks?.summary?.pending || 0),
     completed_tasks: String(context.tasks?.summary?.completedToday || 0),
@@ -713,13 +761,41 @@ export async function buildEnhancedSystemPrompt(
   const pendingTasks = context.tasks?.summary?.pending || 0;
   const completedTasks = context.tasks?.summary?.completedToday || 0;
   const currentStreak = context.progress?.streaks?.[0]?.streak || 0;
-  const currentDate = context.currentDate || new Date().toISOString().split('T')[0];
 
-  // Start with core identity
-  let systemPrompt = `You are the 10X Coach, a personal accountability coach by Team 10X. Today is ${currentDate}.
+  // Use timezone-aware date/time
+  const datetime = context.datetime || getDateTimeContext();
+  const greeting = datetime.greeting;
+  const currentDate = datetime.date;
+  const currentTime = datetime.time;
+  const dayOfWeek = datetime.dayOfWeek;
+  const timezone = datetime.timezone;
+  const dayProgress = datetime.dayProgress;
+
+  // Determine agent personality
+  const personality = capabilities.personality;
+  let personalityInstructions = '';
+  if (personality) {
+    const toneDescriptions: Record<string, string> = {
+      strict: 'Be direct, demanding, and hold high standards. No excuses accepted.',
+      balanced: 'Be supportive but honest. Celebrate wins while pushing for growth.',
+      friendly: 'Be warm, encouraging, and focus on positive reinforcement.',
+    };
+    personalityInstructions = toneDescriptions[personality.tone] || '';
+    if (personality.style) {
+      personalityInstructions += ` ${personality.style}`;
+    }
+  }
+
+  // Start with core identity and datetime context
+  let systemPrompt = `You are the 10X Coach, a personal accountability coach by Team 10X.
+
+## Current Date & Time
+- **Date:** ${currentDate} (${dayOfWeek})
+- **Time:** ${currentTime} (${timezone})
+- **Day Progress:** ${dayProgress}% of productive day complete
 
 ## User Context
-- **Name:** ${userName}
+${greeting}, ${userName}!
 - **Active Challenges:** ${challengeCount}
 - **Pending Tasks:** ${pendingTasks}
 - **Completed Today:** ${completedTasks}
@@ -727,7 +803,16 @@ export async function buildEnhancedSystemPrompt(
 
 `;
 
-  // Add matched prompt's framework/guidance if available
+  // Add personality instructions if configured
+  if (personalityInstructions) {
+    systemPrompt += `## Coaching Style
+${personalityInstructions}
+
+`;
+  }
+
+  // Add matched prompt's framework/guidance if available and allowed
+  // IMPORTANT: The framework is for AI guidance only - never output template text directly
   if (matchedPrompts.primary && matchedPrompts.primary.score > 5) {
     const renderedTemplate = renderPromptTemplate(
       matchedPrompts.primary.prompt.template,
@@ -735,6 +820,12 @@ export async function buildEnhancedSystemPrompt(
     );
 
     systemPrompt += `## Active Framework: ${matchedPrompts.primary.prompt.name}
+**IMPORTANT INSTRUCTION**: The following framework is for your internal guidance ONLY.
+DO NOT output this template text directly to the user.
+Instead, USE these concepts to generate a natural, conversational response that addresses the user's specific question.
+Generate a fresh, personalized response - never copy template text verbatim.
+
+Framework guidance:
 ${renderedTemplate}
 
 `;
@@ -744,6 +835,14 @@ ${renderedTemplate}
   if (matchedPrompts.systemPrompt) {
     systemPrompt += `## Reasoning Protocol
 ${matchedPrompts.systemPrompt.template}
+
+`;
+  }
+
+  // Add custom system prompt override if agent has one
+  if (capabilities.systemPrompt) {
+    systemPrompt += `## Agent Instructions
+${capabilities.systemPrompt}
 
 `;
   }
@@ -783,14 +882,35 @@ ${challengeList}
 `;
   }
 
+  // Add blocked topics if configured
+  if (capabilities.restrictions?.blockedTopics?.length) {
+    systemPrompt += `## Topics to Avoid
+Do not discuss: ${capabilities.restrictions.blockedTopics.join(', ')}
+
+`;
+  }
+
+  // Add available skills context (only assigned ones)
+  if (capabilities.assignedSkills.length > 0) {
+    systemPrompt += `## Your Available Skills
+You can help with: ${capabilities.assignedSkills.join(', ')}
+${capabilities.restrictions?.allowOnlyAssigned ? 'Note: Only use your assigned skills. For other requests, guide the user appropriately.' : ''}
+
+`;
+  }
+
   // Add concise coaching guidelines
   systemPrompt += `## Guidelines
-- Reference user's actual data
-- Be encouraging but honest
+- ALWAYS generate fresh, natural conversational responses - never output template text
+- Reference user's actual data from context above (challenges, tasks, streaks, etc.)
+- Be encouraging but honest about their progress
 - Keep responses concise and actionable
-- Use ${matchedPrompts.primary?.prompt.name || 'coaching'} framework when applicable`;
+- Use time-aware greetings (${datetime.greeting}) and acknowledge the user's timezone
+- Apply the ${matchedPrompts.primary?.prompt.name || 'coaching'} framework concepts, but express them in your own words
+- Personalize based on the user's stated goals and current context
+- Never show placeholders like {{variable}} - all data should be filled in`;
 
-  return { systemPrompt, matchedPrompts };
+  return { systemPrompt, matchedPrompts, agentCapabilities: capabilities };
 }
 
 /**

@@ -16,7 +16,7 @@ Let's create a SMART goal together, {{name}}.
 I'll guide you through each criterion:
 
 **S - Specific**: What exactly do you want to accomplish?
-- Not "get better at coding" but "complete 3 React projects"
+- Not vague goals but specific outcomes with clear deliverables
 
 **M - Measurable**: How will you track progress?
 - Define numbers, percentages, or concrete milestones

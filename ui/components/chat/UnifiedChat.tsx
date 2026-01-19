@@ -7,6 +7,7 @@ import { ChatGreeting } from './ChatGreeting'
 import { ChatInputEnhanced } from './ChatInputEnhanced'
 import { QuickActionsPanel } from './QuickActionsPanel'
 import { ChatMessageWithOptions } from './ChatMessageWithOptions'
+import { StreamingStatus } from './StreamingStatus'
 import { isOnboardingRequired, loadUserContext, generateContextualOpening } from '@/lib/adaptiveOnboarding'
 import { getNextStep, getFirstStep } from '@/lib/onboardingStateMachine'
 import type { Agent } from '@/types'
@@ -19,7 +20,7 @@ interface UnifiedChatProps {
 }
 
 export function UnifiedChat({ agent, onCheckinClick, onCreateSkillClick }: UnifiedChatProps) {
-  const { messages, isTyping, addMessage, sendMessage, markMessageAnswered } = useChatStore()
+  const { messages, isTyping, streamingPhase, streamingDetails, addMessage, sendMessage, markMessageAnswered } = useChatStore()
   const { answerStep, responses, isActive: onboardingActive } = useOnboardingStore()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
@@ -309,16 +310,16 @@ ${firstStep.getMessage({})}`
             />
           ))}
 
-          {/* Typing indicator - only show when no streaming message exists */}
-          {isTyping && !currentMessages.some(m => m.metadata?.isStreaming) && (
-            <div className="flex justify-start">
-              <div className="max-w-[80%] px-4 py-3 bg-oa-bg-secondary border border-oa-border rounded-2xl rounded-bl-sm">
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-oa-text-secondary rounded-full animate-typing typing-dot" />
-                  <div className="w-2 h-2 bg-oa-text-secondary rounded-full animate-typing typing-dot" />
-                  <div className="w-2 h-2 bg-oa-text-secondary rounded-full animate-typing typing-dot" />
-                </div>
-              </div>
+          {/* Streaming Status - shows transparent status like Claude Code */}
+          {isTyping && (
+            <div className="flex justify-start px-2">
+              <StreamingStatus
+                phase={streamingPhase}
+                toolName={streamingDetails.toolName}
+                skillName={streamingDetails.skillName}
+                promptName={streamingDetails.promptName}
+                isVisible={true}
+              />
             </div>
           )}
 

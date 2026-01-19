@@ -19,15 +19,35 @@ export async function GET() {
       const data = await fs.readFile(agentsJsonFile, 'utf-8')
       const agentsData = JSON.parse(data)
       const agents = getAgentsArray(agentsData)
-      return NextResponse.json(agents)
+      // Return in consistent format with agents array
+      return NextResponse.json({
+        agents,
+        globalSkills: agentsData.globalSkills || [],
+        lastUpdated: agentsData.lastUpdated || new Date().toISOString()
+      })
     } catch (error) {
       console.error('Failed to read agents.json:', error)
-      // Return empty array if file doesn't exist
-      return NextResponse.json([])
+      // Return default agent if file doesn't exist
+      return NextResponse.json({
+        agents: [
+          {
+            id: 'accountability-coach',
+            name: 'Accountability Coach',
+            description: 'Your personal accountability partner who helps you stay on track with your goals',
+            avatar: 'coach',
+            isDefault: true,
+            skills: ['streak', 'daily-checkin', 'smart-scheduler'],
+            capabilities: ['challenge-creation', 'daily-checkin', 'progress-tracking', 'motivation', 'planning'],
+            personality: { tone: 'encouraging', style: 'supportive but honest' }
+          }
+        ],
+        globalSkills: [],
+        lastUpdated: new Date().toISOString()
+      })
     }
   } catch (error) {
     console.error('Failed to load agents:', error)
-    return NextResponse.json([], { status: 500 })
+    return NextResponse.json({ agents: [], globalSkills: [] }, { status: 500 })
   }
 }
 
