@@ -264,7 +264,7 @@ export function WelcomeSummary({ onGetStarted, agentName }: WelcomeSummaryProps)
             primary
           />
         )}
-        {stats?.activeChallenges > 0 && (
+        {(stats?.activeChallenges ?? 0) > 0 && (
           <QuickActionButton
             icon={<CheckCircle className="w-4 h-4" />}
             label="Quick Check-in"

@@ -15,6 +15,24 @@ A comprehensive accountability coaching platform with AI-powered chat, challenge
 - **MCP Integration** - Model Context Protocol support for extensibility
 - **Sandbox Execution** - Safe code execution environment for AI responses
 - **Agent System** - Multiple AI agents with configurable capabilities
+- **Welcome Dialogs** - First-time user onboarding and daily summary for returning users
+- **Parallel API Loading** - Optimized performance with concurrent data fetching
+
+## Recent Updates
+
+### Welcome Dialog System
+- **First-Time Welcome Dialog** - Multi-step onboarding for new users with system guide, feature overview, and links to settings. Appears only once per user.
+- **Daily Summary Dialog** - For returning users, shows streak cards, today's tasks, pending items, quick check-in button, and daily motivation. Appears on first visit each day.
+
+### Performance Optimizations
+- **Parallel Context Loading** - API calls for profile, challenges, todos, skills, and MCP tools now run concurrently instead of sequentially
+- **MCP Data Fetcher with Streaming** - Agents can fetch MCP data in sandbox with streamed results
+- **Optimized Image Loading** - Lazy loading with IntersectionObserver for better performance
+- **File Tree Enhancements** - Search functionality, React memoization, and smooth animations
+
+### Navigation Improvements
+- **Browser History Sync** - Back/forward buttons now work correctly with pathname-based navigation
+- **Shared Chat Capabilities** - Unified chat and individual agents share the same feature set
 
 ## Quick Start
 
@@ -179,15 +197,24 @@ The chat system uses phase-based status updates:
 │   │   ├── chat/                # Chat UI components
 │   │   │   ├── UnifiedChat.tsx  # Main chat interface
 │   │   │   ├── StreamingStatus.tsx # Status indicators
-│   │   │   └── ChatMessage.tsx  # Message display
+│   │   │   ├── ChatMessage.tsx  # Message display
+│   │   │   └── WelcomeSummary.tsx # Personalized greeting
+│   │   ├── dialogs/             # Dialog components
+│   │   │   ├── WelcomeDialogManager.tsx # Dialog controller
+│   │   │   ├── FirstTimeWelcomeDialog.tsx # New user onboarding
+│   │   │   └── DailySummaryDialog.tsx # Daily streak summary
 │   │   ├── settings/            # Settings components
 │   │   └── ui/                  # Shared UI components
 │   │
 │   ├── lib/                     # Utilities
 │   │   ├── api/                 # API clients
+│   │   │   └── parallel-loader.ts # Parallel context loading
+│   │   ├── chat/                # Chat utilities
+│   │   │   └── shared-capabilities.ts # Unified chat features
 │   │   ├── mcp/                 # MCP integration
 │   │   │   ├── client.ts        # MCP client
-│   │   │   └── manager.ts       # Tool management
+│   │   │   ├── manager.ts       # Tool management
+│   │   │   └── data-fetcher.ts  # MCP data streaming
 │   │   ├── sandbox/             # Code execution
 │   │   │   └── executor.ts      # Sandbox executor
 │   │   └── store.ts             # Zustand stores

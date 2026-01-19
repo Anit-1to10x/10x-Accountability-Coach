@@ -8,6 +8,7 @@ import { CenterChat } from '@/components/shell/CenterChat'
 import { RightPanel } from '@/components/shell/RightPanel'
 import { QuickCheckin } from '@/components/global/QuickCheckin'
 import { BacklogNotification } from '@/components/backlog'
+import { WelcomeDialogManager } from '@/components/dialogs/WelcomeDialogManager'
 
 // Inner component that uses useSearchParams
 function ShellLayoutInner({ children }: { children: React.ReactNode }) {
@@ -33,6 +34,7 @@ function ShellLayoutInner({ children }: { children: React.ReactNode }) {
         right={!isOnboarding ? <RightPanel /> : null}
       />
       <QuickCheckin />
+      <WelcomeDialogManager />
     </>
   )
 }

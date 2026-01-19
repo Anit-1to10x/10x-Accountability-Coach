@@ -266,7 +266,7 @@ When using tools, the results will be shown to the user in real-time.`;
 
         try {
           // Send MCP status if connected
-          if (mcpStatus && mcpStatus.status === 'connected') {
+          if (mcpStatus && mcpStatus.type === 'mcp_status' && mcpStatus.status === 'connected') {
             const mcpEvent = `data: ${JSON.stringify({
               type: 'mcp_connected',
               servers: mcpStatus.servers || [],

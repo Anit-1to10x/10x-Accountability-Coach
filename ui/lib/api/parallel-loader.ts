@@ -114,7 +114,7 @@ export async function loadContextParallel(options: {
 
   const agentCapabilities = capabilitiesResult.status === 'fulfilled'
     ? capabilitiesResult.value
-    : { agentId, assignedSkills: [], assignedPrompts: [], restrictions: {} }
+    : { agentId, assignedSkills: [], assignedPrompts: [], restrictions: { allowOnlyAssigned: false }, updatedAt: new Date().toISOString() }
 
   // Process file results
   const processedFiles: ProcessedFile[] = []

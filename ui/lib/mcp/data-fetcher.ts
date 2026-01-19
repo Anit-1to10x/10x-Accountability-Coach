@@ -65,7 +65,7 @@ export async function* fetchMCPData(
   const status = await checkMCPStatus()
   yield status
 
-  if (status.status === 'disconnected') {
+  if (status.type === 'mcp_status' && status.status === 'disconnected') {
     yield { type: 'mcp_error', error: 'MCP is not connected. Please configure MCP servers in settings.' }
     return
   }

@@ -151,16 +151,19 @@ function MarkdownViewer({ content }: { content: string }) {
           li: ({ children }) => (
             <li className="text-oa-text-secondary">{children}</li>
           ),
-          code: ({ inline, children }) =>
-            inline ? (
-              <code className="bg-oa-bg-tertiary text-oa-accent px-1.5 py-0.5 rounded text-xs">
+          code: ({ className, children, ...props }) => {
+            // Check if it's an inline code (no className) or code block (has language class)
+            const isInline = !className
+            return isInline ? (
+              <code className="bg-oa-bg-tertiary text-oa-accent px-1.5 py-0.5 rounded text-xs" {...props}>
                 {children}
               </code>
             ) : (
-              <code className="block bg-oa-bg-tertiary p-3 rounded-lg text-xs overflow-x-auto">
+              <code className={`block bg-oa-bg-tertiary p-3 rounded-lg text-xs overflow-x-auto ${className || ''}`} {...props}>
                 {children}
               </code>
-            ),
+            )
+          },
           pre: ({ children }) => (
             <pre className="bg-oa-bg-tertiary p-4 rounded-lg overflow-x-auto mb-4">
               {children}
