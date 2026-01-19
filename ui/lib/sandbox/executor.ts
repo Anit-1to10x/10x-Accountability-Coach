@@ -124,6 +124,7 @@ process.stdout.write(__output.join('\\n'));
         timeout,
         env: { ...process.env, ...env },
         cwd: sandboxDir,
+        shell: process.platform === 'win32', // Use shell on Windows for better path resolution
       })
 
       proc.stdout.on('data', (data) => {
@@ -200,10 +201,13 @@ async function executePython(
       let output = ''
       let errorOutput = ''
 
-      const proc = spawn('python3', [filePath], {
+      // Use 'python' on Windows, 'python3' on Mac/Linux
+      const pythonCmd = process.platform === 'win32' ? 'python' : 'python3'
+      const proc = spawn(pythonCmd, [filePath], {
         timeout,
         env: { ...process.env, ...env },
         cwd: sandboxDir,
+        shell: process.platform === 'win32', // Use shell on Windows for better path resolution
       })
 
       proc.stdout.on('data', (data) => {

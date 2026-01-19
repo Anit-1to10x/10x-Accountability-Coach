@@ -7,7 +7,6 @@ import {
   X,
   Sparkles,
   Target,
-  Settings,
   BookOpen,
   CheckCircle,
   ArrowRight,
@@ -64,15 +63,15 @@ export function FirstTimeWelcomeDialog({
       ],
     },
     {
-      id: 'settings',
-      title: 'Start With Your Settings',
-      description: 'First, let\'s personalize your experience. Visit Settings to configure your preferences, coaching style, and goals.',
-      icon: <Settings className="w-12 h-12 text-amber-400" />,
+      id: 'help',
+      title: 'Learn How It Works',
+      description: 'First, let\'s help you understand the system. Visit the Help page to learn about all features, slash commands, and how to get the most out of your coach.',
+      icon: <BookOpen className="w-12 h-12 text-amber-400" />,
       action: {
-        label: 'Go to Settings',
+        label: 'Go to Help Guide',
         onClick: () => {
           onComplete()
-          router.push('/settings')
+          router.push('/help')
         },
       },
     },
@@ -149,13 +148,24 @@ export function FirstTimeWelcomeDialog({
             />
           </div>
 
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-oa-text-secondary hover:text-oa-text-primary transition-colors rounded-lg hover:bg-oa-bg-secondary"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {/* Skip & Close button */}
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            <button
+              onClick={() => {
+                onComplete()
+                onClose()
+              }}
+              className="px-3 py-1.5 text-xs text-oa-text-secondary hover:text-oa-text-primary transition-colors rounded-lg hover:bg-oa-bg-secondary"
+            >
+              Skip All
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 text-oa-text-secondary hover:text-oa-text-primary transition-colors rounded-lg hover:bg-oa-bg-secondary"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
           {/* Content */}
           <div className="p-8 pt-10">
