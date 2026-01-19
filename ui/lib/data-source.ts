@@ -2,23 +2,52 @@
  * Data Source Abstraction Layer
  *
  * This module provides a unified interface for data operations that can
- * switch between local file storage and Supabase cloud storage.
+ * switch between local file storage, Supabase cloud storage, or MCP servers.
+ *
+ * Priority Order (when available):
+ * 1. MCP (Model Context Protocol) - when MCP is configured and available
+ * 2. Supabase - when enabled in settings AND properly configured
+ * 3. Local file system - default fallback
  *
  * Usage:
- *   import { dataSource } from '@/lib/data-source'
- *   const profiles = await dataSource.profiles.list()
+ *   import { getActiveDataSource, getDataSourceStatus } from '@/lib/data-source'
+ *   const source = await getActiveDataSource() // 'mcp' | 'supabase' | 'local'
  */
 
-// Data source type
-export type DataSourceType = 'local' | 'supabase'
+// Data source types
+export type DataSourceType = 'local' | 'supabase' | 'mcp'
 
-// Get current data source from environment
-export function getDataSource(): DataSourceType {
-  const source = process.env.DATA_SOURCE || 'local'
-  return source === 'supabase' ? 'supabase' : 'local'
+// Settings file to persist user preferences
+let cachedSettings: DataSourceSettings | null = null
+
+export interface DataSourceSettings {
+  supabaseEnabled: boolean
+  mcpEnabled: boolean
+  preferMcp: boolean // When true, MCP takes priority over Supabase
+  lastUpdated?: string
 }
 
-// Check if Supabase is configured
+/**
+ * Get current data source from settings (toggle-based)
+ * Supabase is only used when explicitly enabled in settings
+ */
+export function getDataSource(): DataSourceType {
+  // Check if MCP is available and enabled
+  if (isMcpAvailable()) {
+    return 'mcp'
+  }
+
+  // Check if Supabase is enabled AND configured
+  if (isSupabaseEnabled() && isSupabaseConfigured()) {
+    return 'supabase'
+  }
+
+  return 'local'
+}
+
+/**
+ * Check if Supabase is properly configured in environment
+ */
 export function isSupabaseConfigured(): boolean {
   return !!(
     process.env.SUPABASE_URL &&
@@ -28,20 +57,132 @@ export function isSupabaseConfigured(): boolean {
   )
 }
 
+/**
+ * Check if Supabase is enabled in settings (toggle)
+ */
+export function isSupabaseEnabled(): boolean {
+  const settings = getDataSourceSettings()
+  return settings.supabaseEnabled
+}
+
+/**
+ * Check if MCP is available and configured
+ */
+export function isMcpAvailable(): boolean {
+  // Check for MCP environment configuration
+  const mcpConfig = process.env.MCP_SERVER_URL || process.env.MCP_ENABLED
+  const settings = getDataSourceSettings()
+  return settings.mcpEnabled && !!mcpConfig
+}
+
+/**
+ * Get data source settings from environment/cache
+ */
+export function getDataSourceSettings(): DataSourceSettings {
+  if (cachedSettings) {
+    return cachedSettings
+  }
+
+  // Check environment for defaults
+  const supabaseEnabled = process.env.DATA_SOURCE === 'supabase' ||
+    process.env.SUPABASE_ENABLED === 'true'
+  const mcpEnabled = process.env.MCP_ENABLED === 'true'
+  const preferMcp = process.env.PREFER_MCP !== 'false' // Default to true
+
+  cachedSettings = {
+    supabaseEnabled,
+    mcpEnabled,
+    preferMcp,
+  }
+
+  return cachedSettings
+}
+
+/**
+ * Update data source settings
+ */
+export function setDataSourceSettings(settings: Partial<DataSourceSettings>): void {
+  cachedSettings = {
+    ...getDataSourceSettings(),
+    ...settings,
+    lastUpdated: new Date().toISOString(),
+  }
+}
+
+/**
+ * Enable Supabase (called from settings toggle)
+ */
+export function enableSupabase(): void {
+  setDataSourceSettings({ supabaseEnabled: true })
+}
+
+/**
+ * Disable Supabase (called from settings toggle)
+ */
+export function disableSupabase(): void {
+  setDataSourceSettings({ supabaseEnabled: false })
+}
+
+/**
+ * Enable MCP
+ */
+export function enableMcp(): void {
+  setDataSourceSettings({ mcpEnabled: true })
+}
+
+/**
+ * Disable MCP
+ */
+export function disableMcp(): void {
+  setDataSourceSettings({ mcpEnabled: false })
+}
+
 // Data source configuration status
 export interface DataSourceStatus {
   current: DataSourceType
-  supabaseConfigured: boolean
+  available: {
+    local: boolean
+    supabase: boolean
+    mcp: boolean
+  }
+  enabled: {
+    supabase: boolean
+    mcp: boolean
+  }
   supabaseUrl?: string
+  mcpUrl?: string
   localPath: string
+  message: string
 }
 
+/**
+ * Get comprehensive data source status
+ */
 export function getDataSourceStatus(): DataSourceStatus {
+  const current = getDataSource()
+  const settings = getDataSourceSettings()
+
+  const messages: Record<DataSourceType, string> = {
+    mcp: 'Using MCP (Model Context Protocol) for data',
+    supabase: 'Using Supabase cloud database',
+    local: 'Using local file storage',
+  }
+
   return {
-    current: getDataSource(),
-    supabaseConfigured: isSupabaseConfigured(),
+    current,
+    available: {
+      local: true,
+      supabase: isSupabaseConfigured(),
+      mcp: !!process.env.MCP_SERVER_URL,
+    },
+    enabled: {
+      supabase: settings.supabaseEnabled,
+      mcp: settings.mcpEnabled,
+    },
     supabaseUrl: process.env.SUPABASE_URL,
+    mcpUrl: process.env.MCP_SERVER_URL,
     localPath: process.env.OPENANALYST_DIR || './data',
+    message: messages[current],
   }
 }
 

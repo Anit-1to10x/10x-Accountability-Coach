@@ -6,6 +6,7 @@ import { useAgentStore, useTodoStore, useNavigationStore } from '@/lib/store'
 import { AgentCard } from '@/components/sidebar/AgentCard'
 import { AddAgentButton } from '@/components/sidebar/AddAgentButton'
 import { NavSection } from '@/components/sidebar/NavSection'
+import { DataSourceIndicator } from '@/components/status/DataSourceIndicator'
 import { Home } from 'lucide-react'
 
 export function LeftSidebar() {
@@ -102,8 +103,14 @@ export function LeftSidebar() {
         </div>
       </div>
 
-      {/* Footer Branding */}
-      <div className="px-4 py-3 border-t border-oa-border">
+      {/* Footer */}
+      <div className="px-4 py-3 border-t border-oa-border space-y-2">
+        {/* Data Source Indicator */}
+        <div className="flex justify-center">
+          <DataSourceIndicator />
+        </div>
+
+        {/* Branding */}
         <div className="text-center">
           <p className="text-[10px] text-oa-text-secondary">
             Developed by <span className="font-semibold text-oa-text-primary">Team 10X</span>

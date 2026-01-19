@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
+import JSZip from 'jszip'
 import { SKILLS_DIR } from '@/lib/paths'
+import { clearCache } from '@/lib/api/skills-manager'
 
 // Parse frontmatter from markdown content
 function parseFrontmatter(content: string): { frontmatter: Record<string, any>; body: string } {
@@ -127,18 +129,61 @@ export async function POST(request: NextRequest) {
 
     // Handle ZIP file (extract and import all SKILL.md files)
     if (zipFile) {
-      // For ZIP handling, we need the JSZip library
-      // Since it may not be available, we'll handle this differently
-      // by reading the ZIP as a buffer and using node's built-in capabilities
-      // For simplicity, let's return an instruction to use the manual method
+      try {
+        const zipBuffer = await zipFile.arrayBuffer()
+        const zip = await JSZip.loadAsync(zipBuffer)
 
-      // Note: In a production app, you'd want to use a library like 'jszip' or 'unzipper'
-      // For now, we'll return an error suggesting the alternative
-      return NextResponse.json({
-        success: false,
-        error: 'ZIP upload requires extracting to the skills/ folder manually. Please extract your ZIP and restart the app, or upload individual SKILL.md files.',
-        tip: 'To bulk import skills, extract your ZIP to the "skills/" folder in your project directory.'
-      }, { status: 400 })
+        // Find all SKILL.md files in the ZIP
+        const skillFiles: { path: string; content: string }[] = []
+
+        for (const [filePath, file] of Object.entries(zip.files)) {
+          if (!file.dir && (filePath.endsWith('SKILL.md') || filePath.endsWith('.md'))) {
+            const content = await file.async('string')
+            skillFiles.push({ path: filePath, content })
+          }
+        }
+
+        if (skillFiles.length === 0) {
+          return NextResponse.json({
+            success: false,
+            error: 'No SKILL.md or .md files found in the ZIP archive.',
+            tip: 'Make sure your ZIP contains .md skill files.'
+          }, { status: 400 })
+        }
+
+        // Import each skill
+        for (const skillFile of skillFiles) {
+          // Extract skill name from path (folder name or filename)
+          const pathParts = skillFile.path.split('/')
+          const skillName = pathParts.length > 1
+            ? pathParts[pathParts.length - 2] // Use folder name
+            : pathParts[0].replace('.md', '').replace('SKILL', '').trim()
+
+          const result = await saveSkill(skillFile.content, skillName || undefined)
+          results.push({ ...result, filename: skillFile.path })
+        }
+
+        // Clear skills cache so new skills are immediately available
+        clearCache()
+
+        const successful = results.filter(r => r.success)
+        const failed = results.filter(r => !r.success)
+
+        return NextResponse.json({
+          success: failed.length === 0,
+          imported: successful.length,
+          failed: failed.length,
+          results,
+          skills: successful.map(r => r.skill),
+          message: `Successfully imported ${successful.length} skill(s) from ZIP`
+        })
+      } catch (zipError: any) {
+        console.error('ZIP extraction error:', zipError)
+        return NextResponse.json({
+          success: false,
+          error: `Failed to extract ZIP: ${zipError.message}`,
+        }, { status: 500 })
+      }
     }
 
     // Handle individual .md files
@@ -164,6 +209,9 @@ export async function POST(request: NextRequest) {
       results.push({ ...result, filename: file.name })
     }
 
+    // Clear skills cache so new skills are immediately available
+    clearCache()
+
     const successful = results.filter(r => r.success)
     const failed = results.filter(r => !r.success)
 
@@ -172,7 +220,8 @@ export async function POST(request: NextRequest) {
       imported: successful.length,
       failed: failed.length,
       results,
-      skills: successful.map(r => r.skill)
+      skills: successful.map(r => r.skill),
+      message: `Successfully imported ${successful.length} skill(s)`
     })
   } catch (error: any) {
     console.error('Failed to upload skills:', error)

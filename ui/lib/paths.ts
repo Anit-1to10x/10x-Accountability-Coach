@@ -2,8 +2,12 @@ import path from 'path'
 
 // Determine project root - handle both UI dev mode and production
 // In Next.js, process.cwd() is the 'ui' folder during dev
-const isInsideUI = process.cwd().endsWith('ui') || process.cwd().includes('\\ui')
-export const PROJECT_ROOT = isInsideUI ? path.join(process.cwd(), '..') : process.cwd()
+// Cross-platform check: works on Windows (\ui) and Mac/Linux (/ui)
+const cwd = process.cwd()
+const isInsideUI = cwd.endsWith('ui') ||
+  cwd.endsWith(`${path.sep}ui`) ||
+  path.basename(cwd) === 'ui'
+export const PROJECT_ROOT = isInsideUI ? path.resolve(cwd, '..') : cwd
 
 // Data directory - relative to project root, not user home
 // This makes the app self-contained

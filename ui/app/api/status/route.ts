@@ -1,7 +1,34 @@
 import { NextResponse } from 'next/server'
+import { getDataSourceStatus } from '@/lib/data-source'
 
 export async function GET() {
+  // Get data source status
+  const dataSourceStatus = getDataSourceStatus()
+
   const status = {
+    // Data Source Information
+    dataSource: {
+      current: dataSourceStatus.current,
+      available: dataSourceStatus.available,
+      enabled: dataSourceStatus.enabled,
+      message: dataSourceStatus.message,
+      details: {
+        mcp: {
+          available: dataSourceStatus.available.mcp,
+          enabled: dataSourceStatus.enabled.mcp,
+          url: dataSourceStatus.mcpUrl,
+        },
+        supabase: {
+          available: dataSourceStatus.available.supabase,
+          enabled: dataSourceStatus.enabled.supabase,
+          url: dataSourceStatus.supabaseUrl,
+        },
+        local: {
+          available: true,
+          path: dataSourceStatus.localPath,
+        },
+      },
+    },
     // Main brain - OpenAnalyst API (Required)
     openanalyst: {
       configured: !!process.env.OPENANALYST_API_KEY && process.env.OPENANALYST_API_KEY !== 'sk-oa-v1-your-key-here',
@@ -69,6 +96,8 @@ export async function GET() {
       missingRequired: !process.env.OPENANALYST_API_KEY || process.env.OPENANALYST_API_KEY === 'sk-oa-v1-your-key-here'
         ? ['OpenAnalyst API Key - Required for the app to work']
         : [],
+      dataSource: dataSourceStatus.current,
+      dataSourceMessage: dataSourceStatus.message,
     },
   }
 

@@ -1,31 +1,73 @@
 # 10X Accountability Coach - Claude Code Instructions
 
+## IMPORTANT: Cross-Platform System Detection
+
+**Before running ANY commands**, Claude Code must detect the operating system:
+
+### How to Detect the OS
+Use the `process.platform` from Node.js or check the environment:
+
+**Windows Detection:**
+- `process.platform === 'win32'`
+- Path separators use `\`
+- Commands use Windows syntax
+
+**Mac/Linux Detection:**
+- `process.platform === 'darwin'` (Mac) or `process.platform === 'linux'`
+- Path separators use `/`
+- Commands use Unix syntax
+
+### Dynamic Command Execution
+Always use **cross-platform commands** that work on both systems:
+
+| Task | Cross-Platform Command |
+|------|------------------------|
+| Install deps | `npm install` (works everywhere) |
+| Change directory | `cd ui` (works everywhere) |
+| Kill port | `npx kill-port 3000` (works everywhere) |
+| Read file | Use the Read tool (not `cat`) |
+| Check file exists | Use Glob tool or `fs.existsSync` |
+| Create directory | `mkdir -p` or use `fs.mkdirSync` |
+
+---
+
 ## IMPORTANT: Auto-Setup Instructions for Claude Code
 
 When a user says **"start my app"**, **"run the app"**, **"set up the project"**, or similar commands, Claude Code (YOU) must automatically perform the following steps:
 
-### Step 1: Check and Install Dependencies
+### Step 1: Detect Operating System
 
+**Use Bash to check the platform:**
+```bash
+node -e "console.log(process.platform)"
+```
+
+This will return:
+- `win32` for Windows
+- `darwin` for Mac
+- `linux` for Linux
+
+### Step 2: Install Dependencies (Cross-Platform)
+
+These commands work on ALL platforms:
 ```bash
 # Install root dependencies
 npm install
 
 # Install UI dependencies
-cd ui && npm install && cd ..
+cd ui && npm install
 ```
 
-### Step 2: Check for API Key Configuration
+### Step 3: Check for API Key Configuration
 
-Check if `ui/.env.local` exists and has a valid API key:
-
-```bash
-cat ui/.env.local 2>/dev/null || echo "NOT_FOUND"
-```
+**Use the Read tool** to check `ui/.env.local` (NOT cat command):
+- Read the file using Claude Code's Read tool
+- Check if it contains a valid API key (not placeholder)
 
 **If the file doesn't exist OR contains placeholder `sk-oa-v1-your-key-here`:**
 
 1. Ask the user: "Do you have an OpenAnalyst API key? If not, get one at https://10x.events/api-key"
-2. Once user provides the key, create `ui/.env.local`:
+2. Once user provides the key, create `ui/.env.local` using the Write tool:
 
 ```env
 # OpenAnalyst AI API (Required)
@@ -34,19 +76,20 @@ OPENANALYST_API_KEY=<USER'S ACTUAL API KEY>
 OPENANALYST_MODEL=openanalyst-beta
 ```
 
-### Step 3: Kill Any Existing Processes on Port 3000
+### Step 4: Kill Any Existing Processes on Port 3000
 
+**Cross-platform command (works on Windows, Mac, Linux):**
 ```bash
-npx kill-port 3000 2>/dev/null || true
+npx kill-port 3000
 ```
 
-### Step 4: Start the Application
+### Step 5: Start the Application
 
 ```bash
 cd ui && npm run dev
 ```
 
-### Step 5: Confirm to User
+### Step 6: Confirm to User
 
 Tell the user: "Your 10X Accountability Coach is running at http://localhost:3000"
 
@@ -57,14 +100,15 @@ Tell the user: "Your 10X Accountability Coach is running at http://localhost:300
 When user says "start my app", execute this flow:
 
 ```
-1. npm install (root)
-2. cd ui && npm install
-3. Check ui/.env.local for API key
-   - If missing/placeholder → Ask user for API key → Create file
+1. Detect OS: node -e "console.log(process.platform)"
+2. npm install (root) - cross-platform
+3. cd ui && npm install - cross-platform
+4. Check ui/.env.local for API key (use Read tool)
+   - If missing/placeholder → Ask user for API key → Create file (use Write tool)
    - If valid → Continue
-4. npx kill-port 3000
-5. cd ui && npm run dev
-6. Tell user: "App running at http://localhost:3000"
+5. npx kill-port 3000 - cross-platform
+6. cd ui && npm run dev - cross-platform
+7. Tell user: "App running at http://localhost:3000"
 ```
 
 ---
@@ -202,15 +246,45 @@ cd ui && npm run dev
 ```
 
 ### Dependencies Not Installing
+
+**Cross-platform (use these commands on ANY system):**
 ```bash
-rm -rf node_modules ui/node_modules
+# Remove node_modules (works on Windows, Mac, Linux)
+npx rimraf node_modules ui/node_modules
+
+# Reinstall
 npm install && cd ui && npm install
 ```
 
+**Or use the Bash tool with platform-specific commands:**
+- **Windows:** `rmdir /s /q node_modules ui\node_modules`
+- **Mac/Linux:** `rm -rf node_modules ui/node_modules`
+
 ### Build Errors
+
+**Cross-platform:**
 ```bash
-cd ui && rm -rf .next && npm run build
+cd ui && npx rimraf .next && npm run build
 ```
+
+### Path Issues on Different Operating Systems
+
+The app uses `path.sep` and cross-platform path utilities. If you encounter path-related errors:
+
+1. **Check paths.ts** - Uses `path.basename()` and `path.sep` for cross-platform compatibility
+2. **Check data-source.ts** - Uses environment variables without path hardcoding
+3. **Restart the dev server** after making changes
+
+### Data Source Issues
+
+The app supports three data sources with this priority:
+1. **MCP** - When MCP is configured and enabled
+2. **Supabase** - When toggled ON in settings AND configured
+3. **Local** - Default fallback
+
+To check which data source is active:
+- Look at the data source indicator in the UI
+- Check `ui/lib/data-source.ts` for the logic
 
 ---
 

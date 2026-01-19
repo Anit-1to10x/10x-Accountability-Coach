@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await generateImage(prompt, true)
+    const result = await generateImage(prompt, { saveToAssets: true })
 
     if (result.success) {
       return NextResponse.json({
