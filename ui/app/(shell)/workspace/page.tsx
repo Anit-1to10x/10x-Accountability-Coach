@@ -343,7 +343,7 @@ export default function WorkspacePage() {
 function getFolderDescription(name: string): string {
   const descriptions: Record<string, string> = {
     'challenges': 'Your active and completed challenges. Each challenge has its own folder with daily tasks, progress tracking, and check-in history.',
-    'skills': 'Custom Claude Skills you\'ve created or installed. Skills extend OpenAnalyst\'s capabilities.',
+    'skills': 'Custom Claude Skills you\'ve created or installed. Skills extend 10X\'s capabilities.',
     'prompts': 'Saved prompt templates for quick access. Create reusable prompts for common tasks.',
     'todos': 'Your task lists and to-do items, organized by date and priority.',
     'schedule': 'Calendar events and scheduled sessions. Track your time commitments.',

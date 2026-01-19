@@ -21,7 +21,7 @@ export default function HelpPage() {
       content: (
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold mb-3">Welcome to OpenAnalyst Accountability Coach</h3>
+            <h3 className="text-lg font-semibold mb-3">Welcome to 10X Accountability Coach</h3>
             <p className="text-sm text-oa-text-secondary leading-relaxed mb-4">
               Your personal AI-powered accountability system. Everything runs locally,
               and all your data is stored in the <code className="px-2 py-1 bg-oa-bg-secondary border border-oa-border">data/</code> folder.
@@ -660,7 +660,7 @@ taskkill /F /PID <pid>`}
         <div className="mb-8">
           <h1 className="text-title font-semibold mb-2">Help & Documentation</h1>
           <p className="text-sm text-oa-text-secondary">
-            Everything you need to know about using OpenAnalyst Accountability Coach
+            Everything you need to know about using 10X Accountability Coach
           </p>
         </div>
 

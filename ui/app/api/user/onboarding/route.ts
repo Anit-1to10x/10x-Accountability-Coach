@@ -57,6 +57,9 @@ export async function POST(request: NextRequest) {
     await fs.mkdir(profilePaths.chats, { recursive: true })
     await fs.mkdir(profilePaths.checkins, { recursive: true })
     await fs.mkdir(profilePaths.visionboards, { recursive: true })
+    await fs.mkdir(profilePaths.schedule, { recursive: true })
+    await fs.mkdir(profilePaths.contracts, { recursive: true })
+    await fs.mkdir(profilePaths.punishments, { recursive: true })
 
     // Create profile.md
     const profileContent = `# User Profile

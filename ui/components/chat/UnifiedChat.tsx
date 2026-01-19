@@ -65,7 +65,7 @@ export function UnifiedChat({ agent, onCheckinClick, onCreateSkillClick }: Unifi
 
     if (isFirstTime) {
       // First-time onboarding
-      openingMessage = `Welcome to OpenAnalyst! I'm your ${agent?.name || 'Accountability Coach'}.
+      openingMessage = `Welcome to 10X! I'm your ${agent?.name || 'Accountability Coach'}.
 
 Before we begin, I need to set up your first challenge. This is **mandatory** - you can't skip it!
 

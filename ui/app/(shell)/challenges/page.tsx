@@ -15,7 +15,10 @@ import {
   XCircle,
   Clock,
   TrendingUp,
-  Zap
+  Zap,
+  Trash2,
+  AlertTriangle,
+  X
 } from 'lucide-react'
 import { AnimatedButton } from '@/components/ui/AnimatedButton'
 import type { Challenge } from '@/types/streak'
@@ -62,6 +65,11 @@ export default function ChallengesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'active' | 'paused' | 'completed' | 'failed'>('all')
   const hasLoaded = React.useRef(false)
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; challenge: Challenge | null }>({
+    isOpen: false,
+    challenge: null
+  })
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (!hasLoaded.current) {
@@ -79,6 +87,38 @@ export default function ChallengesPage() {
       console.error('Failed to load challenges:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleDeleteClick = (e: React.MouseEvent, challenge: Challenge) => {
+    e.stopPropagation() // Prevent navigation to challenge detail
+    setDeleteModal({ isOpen: true, challenge })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.challenge) return
+
+    setIsDeleting(true)
+    try {
+      const profileId = localStorage.getItem('activeProfileId')
+      const url = profileId
+        ? `/api/challenges/${deleteModal.challenge.id}?profileId=${profileId}`
+        : `/api/challenges/${deleteModal.challenge.id}`
+
+      const res = await fetch(url, { method: 'DELETE' })
+      const data = await res.json()
+
+      if (data.success) {
+        // Remove from local state
+        setChallenges(prev => prev.filter(c => c.id !== deleteModal.challenge?.id))
+        setDeleteModal({ isOpen: false, challenge: null })
+      } else {
+        console.error('Failed to delete challenge:', data.error)
+      }
+    } catch (error) {
+      console.error('Failed to delete challenge:', error)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -245,9 +285,18 @@ export default function ChallengesPage() {
                         {challenge.status}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1 text-orange-500">
-                      <Flame className="w-4 h-4" />
-                      <span className="text-sm font-semibold">{challenge.streak?.current || 0}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 text-orange-500">
+                        <Flame className="w-4 h-4" />
+                        <span className="text-sm font-semibold">{challenge.streak?.current || 0}</span>
+                      </div>
+                      <button
+                        onClick={(e) => handleDeleteClick(e, challenge)}
+                        className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-oa-text-secondary hover:text-red-400 transition-all"
+                        title="Delete challenge"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
 
@@ -335,6 +384,82 @@ export default function ChallengesPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.isOpen && deleteModal.challenge && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <motion.div
+            className="bg-oa-bg-primary border border-oa-border rounded-lg w-full max-w-md overflow-hidden"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+          >
+            {/* Header */}
+            <div className="p-6 border-b border-oa-border">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-red-400" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-oa-text-primary">
+                    Delete Challenge
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setDeleteModal({ isOpen: false, challenge: null })}
+                  className="p-2 hover:bg-oa-bg-secondary rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-oa-text-secondary" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <p className="text-oa-text-primary mb-2">
+                Are you sure you want to delete <span className="font-semibold">"{deleteModal.challenge.name}"</span>?
+              </p>
+              <p className="text-sm text-oa-text-secondary mb-4">
+                This action cannot be undone. The following will be permanently deleted:
+              </p>
+              <ul className="text-sm text-oa-text-secondary space-y-1 mb-6 list-disc list-inside">
+                <li>All challenge data and progress</li>
+                <li>Related todos and tasks</li>
+                <li>Calendar events and schedules</li>
+                <li>Check-in history</li>
+              </ul>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setDeleteModal({ isOpen: false, challenge: null })}
+                  className="px-4 py-2 border border-oa-border text-oa-text-primary rounded-lg hover:bg-oa-bg-secondary transition-colors"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isDeleting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      Delete Challenge
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }

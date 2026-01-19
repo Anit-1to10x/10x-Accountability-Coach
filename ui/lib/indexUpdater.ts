@@ -215,7 +215,7 @@ export async function syncChallenges(challenges: ChallengeData[]) {
 export async function initializeIndex(userName: string) {
   try {
     await updateIndexSection('systemOverview', {
-      appName: 'OpenAnalyst Accountability Coach',
+      appName: '10X Accountability Coach',
       userName,
       created: new Date().toISOString(),
       totalChallenges: 0,

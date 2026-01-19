@@ -72,7 +72,7 @@ async function ensureIndexExists() {
     // Create default index.md
     const defaultContent = generateIndexTemplate({
       systemOverview: {
-        appName: 'OpenAnalyst Accountability Coach',
+        appName: '10X Accountability Coach',
         userName: 'User',
         created: new Date().toISOString(),
         totalChallenges: 0,
@@ -97,12 +97,12 @@ function generateIndexTemplate(data: IndexSection): string {
   const punishments = data.punishments || []
   const session = data.sessionContext || {}
 
-  return `# OpenAnalyst Architecture Index
+  return `# 10X Architecture Index
 > Last Updated: ${timestamp}
 > Version: 2.0
 
 ## System Overview
-- **App Name:** ${overview.appName || 'OpenAnalyst Accountability Coach'}
+- **App Name:** ${overview.appName || '10X Accountability Coach'}
 - **User:** ${overview.userName || 'User'}
 - **Created:** ${overview.created || timestamp}
 - **Total Challenges:** ${overview.totalChallenges || 0}

@@ -41,8 +41,12 @@ export default function SettingsPage() {
   })
   const [isSaving, setIsSaving] = useState(false)
   const [apiStatus, setApiStatus] = useState<{
-    openanalyst: { configured: boolean; url: string; model: string }
-    gemini: { configured: boolean; model: string; imageModel: string }
+    openanalyst: { configured: boolean; url: string; model: string; required: boolean; description: string; envKey: string; getKeyUrl: string; instructions: string }
+    gemini: { configured: boolean; model: string; imageModel: string; required: boolean; description: string; envKey: string; getKeyUrl: string; instructions: string; usedBy: string[] }
+    brave: { configured: boolean; required: boolean; description: string; envKey: string; getKeyUrl: string; instructions: string; usedBy: string[] }
+    perplexity: { configured: boolean; required: boolean; description: string; envKey: string; getKeyUrl: string; instructions: string; usedBy: string[] }
+    serper: { configured: boolean; required: boolean; description: string; envKey: string; getKeyUrl: string; instructions: string; usedBy: string[] }
+    summary: { mainBrainConfigured: boolean; optionalServicesConfigured: string[]; missingRequired: string[] }
   } | null>(null)
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     apiStatus: true,
@@ -178,49 +182,161 @@ export default function SettingsPage() {
         >
           {apiStatus ? (
             <div className="space-y-4">
-              {/* OpenAnalyst API */}
-              <div className="flex items-center justify-between p-4 bg-oa-bg-tertiary rounded-lg border border-oa-border">
-                <div className="flex items-center gap-3">
-                  {apiStatus.openanalyst.configured ? (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-red-500" />
-                  )}
-                  <div>
-                    <h4 className="text-sm font-medium text-oa-text-primary">OpenAnalyst API (Chat)</h4>
-                    <p className="text-xs text-oa-text-secondary">
-                      {apiStatus.openanalyst.configured ? `Connected - Model: ${apiStatus.openanalyst.model}` : 'Not configured - Add OPENANALYST_API_KEY to .env.local'}
-                    </p>
+              {/* Warning banner if main API not configured */}
+              {!apiStatus.summary.mainBrainConfigured && (
+                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-red-400 mb-1">OpenAnalyst API Key Required</h4>
+                      <p className="text-xs text-red-300 mb-2">
+                        The main AI brain is not configured. The app will not work without this API key.
+                      </p>
+                      <ol className="text-xs text-red-300 space-y-1 list-decimal list-inside mb-3">
+                        <li>Get your API key at <a href="https://10x.events/api-key" target="_blank" rel="noopener noreferrer" className="underline hover:text-red-200">https://10x.events/api-key</a></li>
+                        <li>Add <code className="bg-red-500/20 px-1 py-0.5 rounded">OPENANALYST_API_KEY=sk-oa-v1-xxx</code> to <code className="bg-red-500/20 px-1 py-0.5 rounded">ui/.env.local</code></li>
+                        <li>Restart the development server</li>
+                      </ol>
+                    </div>
                   </div>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${apiStatus.openanalyst.configured ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                  {apiStatus.openanalyst.configured ? 'Connected' : 'Missing'}
-                </span>
+              )}
+
+              {/* Required: OpenAnalyst API */}
+              <div className={`p-4 rounded-lg border ${apiStatus.openanalyst.configured ? 'bg-oa-bg-tertiary border-oa-border' : 'bg-red-500/5 border-red-500/30'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    {apiStatus.openanalyst.configured ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-500" />
+                    )}
+                    <div>
+                      <h4 className="text-sm font-medium text-oa-text-primary">OpenAnalyst API</h4>
+                      <p className="text-xs text-oa-text-secondary">{apiStatus.openanalyst.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-1 rounded-full bg-purple-500/10 text-purple-400">Required</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${apiStatus.openanalyst.configured ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                      {apiStatus.openanalyst.configured ? 'Connected' : 'Missing'}
+                    </span>
+                  </div>
+                </div>
+                {apiStatus.openanalyst.configured ? (
+                  <p className="text-xs text-oa-text-secondary ml-8">Model: {apiStatus.openanalyst.model}</p>
+                ) : (
+                  <a href={apiStatus.openanalyst.getKeyUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-oa-accent hover:underline ml-8">
+                    Get API Key →
+                  </a>
+                )}
               </div>
 
-              {/* Gemini API */}
-              <div className="flex items-center justify-between p-4 bg-oa-bg-tertiary rounded-lg border border-oa-border">
-                <div className="flex items-center gap-3">
+              <div className="border-t border-oa-border pt-4 mt-4">
+                <h4 className="text-sm font-medium text-oa-text-primary mb-3">Optional Services</h4>
+                <p className="text-xs text-oa-text-secondary mb-4">These APIs enable additional features but are not required for basic functionality.</p>
+              </div>
+
+              {/* Optional: Gemini API */}
+              <div className="p-4 bg-oa-bg-tertiary rounded-lg border border-oa-border">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    {apiStatus.gemini.configured ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-yellow-500/50" />
+                    )}
+                    <div>
+                      <h4 className="text-sm font-medium text-oa-text-primary">Gemini API</h4>
+                      <p className="text-xs text-oa-text-secondary">{apiStatus.gemini.description}</p>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full ${apiStatus.gemini.configured ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
+                    {apiStatus.gemini.configured ? 'Connected' : 'Not configured'}
+                  </span>
+                </div>
+                <div className="ml-8">
                   {apiStatus.gemini.configured ? (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <p className="text-xs text-oa-text-secondary">Model: {apiStatus.gemini.imageModel}</p>
                   ) : (
-                    <XCircle className="w-5 h-5 text-yellow-500" />
+                    <a href={apiStatus.gemini.getKeyUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-oa-accent hover:underline">
+                      Get API Key at Google AI Studio →
+                    </a>
                   )}
-                  <div>
-                    <h4 className="text-sm font-medium text-oa-text-primary">Gemini API (Image Generation)</h4>
-                    <p className="text-xs text-oa-text-secondary">
-                      {apiStatus.gemini.configured ? `Connected - Model: ${apiStatus.gemini.imageModel}` : 'Optional - Add GEMINI_API_KEY to .env.local for image features'}
-                    </p>
-                  </div>
+                  {apiStatus.gemini.usedBy && (
+                    <p className="text-xs text-oa-text-secondary mt-1">Used by: {apiStatus.gemini.usedBy.join(', ')}</p>
+                  )}
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${apiStatus.gemini.configured ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
-                  {apiStatus.gemini.configured ? 'Connected' : 'Optional'}
-                </span>
               </div>
 
-              <p className="text-xs text-oa-text-secondary mt-2">
-                API keys are stored in <code className="bg-oa-bg-tertiary px-1 py-0.5 rounded">ui/.env.local</code>
-              </p>
+              {/* Optional: Brave API */}
+              <div className="p-4 bg-oa-bg-tertiary rounded-lg border border-oa-border">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    {apiStatus.brave.configured ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-gray-500/50" />
+                    )}
+                    <div>
+                      <h4 className="text-sm font-medium text-oa-text-primary">Brave Search API</h4>
+                      <p className="text-xs text-oa-text-secondary">{apiStatus.brave.description}</p>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full ${apiStatus.brave.configured ? 'bg-green-500/10 text-green-500' : 'bg-gray-500/10 text-gray-500'}`}>
+                    {apiStatus.brave.configured ? 'Connected' : 'Not configured'}
+                  </span>
+                </div>
+                {!apiStatus.brave.configured && (
+                  <a href={apiStatus.brave.getKeyUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-oa-accent hover:underline ml-8">
+                    Get API Key at Brave Search →
+                  </a>
+                )}
+              </div>
+
+              {/* Optional: Perplexity API */}
+              <div className="p-4 bg-oa-bg-tertiary rounded-lg border border-oa-border">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    {apiStatus.perplexity.configured ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-gray-500/50" />
+                    )}
+                    <div>
+                      <h4 className="text-sm font-medium text-oa-text-primary">Perplexity API</h4>
+                      <p className="text-xs text-oa-text-secondary">{apiStatus.perplexity.description}</p>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full ${apiStatus.perplexity.configured ? 'bg-green-500/10 text-green-500' : 'bg-gray-500/10 text-gray-500'}`}>
+                    {apiStatus.perplexity.configured ? 'Connected' : 'Not configured'}
+                  </span>
+                </div>
+                {!apiStatus.perplexity.configured && (
+                  <a href={apiStatus.perplexity.getKeyUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-oa-accent hover:underline ml-8">
+                    Get API Key at Perplexity →
+                  </a>
+                )}
+              </div>
+
+              <div className="mt-4 p-3 bg-oa-bg-tertiary rounded-lg">
+                <p className="text-xs text-oa-text-secondary">
+                  <strong>How to add API keys:</strong> Create or edit <code className="bg-oa-bg-primary px-1 py-0.5 rounded">ui/.env.local</code> and add your keys:
+                </p>
+                <pre className="mt-2 text-xs bg-oa-bg-primary p-2 rounded overflow-x-auto text-oa-text-secondary">
+{`# Required
+OPENANALYST_API_KEY=sk-oa-v1-xxx
+OPENANALYST_API_URL=https://api.openanalyst.com/api
+OPENANALYST_MODEL=openanalyst-beta
+
+# Optional - Image Generation
+GEMINI_API_KEY=xxx
+
+# Optional - Search
+BRAVE_API_KEY=xxx
+PERPLEXITY_API_KEY=xxx`}
+                </pre>
+              </div>
             </div>
           ) : (
             <p className="text-sm text-oa-text-secondary">Loading API status...</p>

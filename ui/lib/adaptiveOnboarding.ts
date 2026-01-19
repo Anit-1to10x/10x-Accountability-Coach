@@ -111,7 +111,7 @@ export async function loadUserContext(): Promise<UserContext> {
  */
 export function generateContextualOpening(context: UserContext, isFirstTime: boolean): string {
   if (isFirstTime) {
-    return `Welcome to OpenAnalyst! I'm your Accountability Coach.
+    return `Welcome to 10X! I'm your Accountability Coach.
 
 Before we begin, I need to set up your first challenge. This is **mandatory** - you can't skip it!
 

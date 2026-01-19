@@ -73,11 +73,35 @@ export default function ProfilesPage() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center gap-4"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center"
         >
-          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+          {/* 10X Logo */}
+          <motion.div
+            className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30"
+            animate={{
+              boxShadow: [
+                '0 0 20px rgba(168, 85, 247, 0.3)',
+                '0 0 40px rgba(168, 85, 247, 0.5)',
+                '0 0 20px rgba(168, 85, 247, 0.3)',
+              ]
+            }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <span className="text-xl font-black text-white">10X</span>
+          </motion.div>
+          {/* Dots */}
+          <div className="flex gap-1.5 mt-6">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 rounded-full bg-purple-500"
+                animate={{ scale: [1, 1.3, 1], opacity: [0.4, 1, 0.4] }}
+                transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+              />
+            ))}
+          </div>
         </motion.div>
       </div>
     )
@@ -90,62 +114,97 @@ export default function ProfilesPage() {
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.4 }}
           className="flex flex-col items-center"
         >
-          {/* Animated logo/orb */}
+          {/* Background glow */}
           <motion.div
-            className="relative w-20 h-20 mb-8"
-            animate={{
-              scale: [1, 1.1, 1],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
+            className="absolute w-48 h-48 rounded-full bg-gradient-to-r from-purple-600/20 to-pink-600/20 blur-3xl"
+            animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+
+          {/* Animated 10X Logo */}
+          <motion.div
+            className="relative w-28 h-28 mb-6"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
           >
-            {/* Outer glow ring */}
+            {/* Rotating outer ring */}
             <motion.div
-              className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 blur-xl opacity-50"
-              animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.5, 0.3, 0.5]
+              className="absolute -inset-3 rounded-2xl"
+              style={{
+                background: 'conic-gradient(from 0deg, transparent, rgba(168, 85, 247, 0.5), rgba(236, 72, 153, 0.5), transparent)',
               }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-            {/* Core orb */}
-            <motion.div
-              className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600"
               animate={{ rotate: 360 }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "linear"
-              }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             />
-            {/* Inner shine */}
-            <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/30 to-transparent" />
+
+            {/* Main logo box */}
+            <motion.div
+              className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-2xl"
+              animate={{
+                boxShadow: [
+                  '0 0 30px rgba(168, 85, 247, 0.4)',
+                  '0 0 60px rgba(168, 85, 247, 0.6)',
+                  '0 0 30px rgba(168, 85, 247, 0.4)',
+                ]
+              }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              {/* Shine effect */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/25 via-transparent to-transparent" />
+
+              {/* 10X Text with glow */}
+              <motion.span
+                className="relative text-4xl font-black text-white"
+                animate={{
+                  textShadow: [
+                    '0 0 10px rgba(255,255,255,0.5)',
+                    '0 0 30px rgba(255,255,255,0.8)',
+                    '0 0 10px rgba(255,255,255,0.5)',
+                  ]
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                10X
+              </motion.span>
+            </motion.div>
           </motion.div>
 
-          {/* Loading dots */}
-          <div className="flex gap-1.5">
-            {[0, 1, 2].map((i) => (
+          {/* Welcome text */}
+          <motion.p
+            className="text-white font-medium text-lg mb-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            Welcome back!
+          </motion.p>
+
+          {/* Loading indicator */}
+          <motion.p
+            className="text-gray-400 text-sm tracking-wider uppercase"
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            Preparing your workspace
+          </motion.p>
+
+          {/* Animated progress dots */}
+          <div className="flex gap-2 mt-6">
+            {[0, 1, 2, 3, 4].map((i) => (
               <motion.div
                 key={i}
-                className="w-2 h-2 rounded-full bg-purple-500"
+                className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-400 to-pink-400"
                 animate={{
-                  y: [-3, 3, -3],
-                  opacity: [0.5, 1, 0.5]
+                  scale: [0.8, 1.2, 0.8],
+                  opacity: [0.3, 1, 0.3],
                 }}
                 transition={{
-                  duration: 0.6,
+                  duration: 1,
                   repeat: Infinity,
-                  delay: i * 0.15,
+                  delay: i * 0.1,
                   ease: "easeInOut"
                 }}
               />
@@ -167,15 +226,15 @@ export default function ProfilesPage() {
         >
           {/* Logo */}
           <motion.div
-            className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center"
+            className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30"
             whileHover={{ scale: 1.05 }}
           >
-            <span className="text-2xl font-bold text-white">OA</span>
+            <span className="text-2xl font-black text-white">10X</span>
           </motion.div>
 
-          <h1 className="text-2xl font-semibold text-white mb-2">Welcome to OpenAnalyst</h1>
+          <h1 className="text-2xl font-semibold text-white mb-2">Welcome to 10X Coach</h1>
           <p className="text-gray-400 text-sm mb-8 max-w-sm">
-            Your AI-powered accountability coach. Create your profile to get started.
+            Your AI-powered accountability coach by Team 10X. Create your profile to get started.
           </p>
 
           <motion.button
@@ -206,9 +265,19 @@ export default function ProfilesPage() {
         className="text-center mb-12"
       >
         {/* Logo */}
-        <div className="w-12 h-12 mx-auto mb-6 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-          <span className="text-lg font-bold text-white">OA</span>
-        </div>
+        <motion.div
+          className="w-14 h-14 mx-auto mb-6 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30"
+          animate={{
+            boxShadow: [
+              '0 0 20px rgba(168, 85, 247, 0.2)',
+              '0 0 30px rgba(168, 85, 247, 0.4)',
+              '0 0 20px rgba(168, 85, 247, 0.2)',
+            ]
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <span className="text-xl font-black text-white">10X</span>
+        </motion.div>
         <h1 className="text-3xl font-medium text-white mb-2">Who's coaching today?</h1>
       </motion.div>
 

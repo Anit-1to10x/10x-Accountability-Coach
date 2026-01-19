@@ -22,6 +22,22 @@ const COLOR_OPTIONS: { value: AgentColor; label: string; bg: string; border: str
   { value: 'cyan', label: 'Cyan', bg: 'bg-cyan-500', border: 'border-cyan-500' },
 ]
 
+// Emoji options for quick selection
+const EMOJI_OPTIONS = [
+  // Activity & Sports
+  '🎯', '💪', '🏃', '🧘', '🏋️', '⚡', '🔥',
+  // Work & Productivity
+  '💼', '📊', '📈', '💡', '🎨', '✨', '🚀',
+  // Learning & Education
+  '📚', '🎓', '🧠', '💻', '📝', '🔬', '🎵',
+  // Wellness & Health
+  '🧘', '🌱', '💚', '🍎', '😊', '🌟', '❤️',
+  // Communication
+  '💬', '🤝', '👋', '🎤', '📣', '💭', '🗣️',
+  // Fun
+  '🤖', '🦾', '🎮', '🎲', '🌈', '⭐', '🏆',
+]
+
 export function CreateAgentModal({ isOpen, onClose, onCreateAgent, onCreateSkill }: CreateAgentModalProps) {
   const [formData, setFormData] = useState({
     name: '',
@@ -126,31 +142,61 @@ export function CreateAgentModal({ isOpen, onClose, onCreateAgent, onCreateSkill
                 Basic Information
               </h3>
 
-              <div className="grid grid-cols-[auto,1fr] gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-oa-text-primary mb-2">
-                    Icon
-                  </label>
+              <div>
+                <label className="block text-sm font-medium text-oa-text-primary mb-2">
+                  Agent Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 bg-oa-bg-tertiary border border-oa-border rounded-lg text-oa-text-primary focus:outline-none focus:ring-2 focus:ring-oa-accent"
+                  placeholder="e.g., Fitness Coach, Study Buddy, etc."
+                  required
+                />
+              </div>
+
+              {/* Icon/Emoji Picker */}
+              <div>
+                <label className="block text-sm font-medium text-oa-text-primary mb-2">
+                  Choose an Icon
+                </label>
+                <div className="flex items-start gap-4">
+                  {/* Selected icon preview */}
+                  <div
+                    className={`w-16 h-16 rounded-xl flex items-center justify-center text-3xl shrink-0 transition-all ${
+                      COLOR_OPTIONS.find(c => c.value === formData.color)?.bg || 'bg-purple-500'
+                    } shadow-lg`}
+                  >
+                    {formData.icon}
+                  </div>
+                  {/* Emoji grid */}
+                  <div className="flex-1 grid grid-cols-7 gap-1.5 p-2 bg-oa-bg-tertiary rounded-lg border border-oa-border max-h-32 overflow-y-auto">
+                    {EMOJI_OPTIONS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, icon: emoji })}
+                        className={`w-8 h-8 rounded-lg text-lg flex items-center justify-center transition-all hover:scale-110 ${
+                          formData.icon === emoji
+                            ? 'bg-oa-accent/30 ring-2 ring-oa-accent'
+                            : 'hover:bg-oa-bg-secondary'
+                        }`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Custom emoji input */}
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs text-oa-text-secondary">Or type your own:</span>
                   <input
                     type="text"
                     value={formData.icon}
-                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                    className="w-16 h-16 text-3xl text-center bg-oa-bg-tertiary border border-oa-border rounded-lg focus:outline-none focus:ring-2 focus:ring-oa-accent"
-                    placeholder="🤖"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-oa-text-primary mb-2">
-                    Agent Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-oa-bg-tertiary border border-oa-border rounded-lg text-oa-text-primary focus:outline-none focus:ring-2 focus:ring-oa-accent"
-                    placeholder="e.g., Fitness Coach, Study Buddy, etc."
-                    required
+                    onChange={(e) => setFormData({ ...formData, icon: e.target.value.slice(-2) })}
+                    className="w-12 h-8 text-lg text-center bg-oa-bg-tertiary border border-oa-border rounded focus:outline-none focus:ring-2 focus:ring-oa-accent"
+                    maxLength={2}
                   />
                 </div>
               </div>

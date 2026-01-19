@@ -1,7 +1,7 @@
 {
-  "name": "openanalyst-ui",
-  "version": "2.0.0",
-  "description": "OpenAnalyst Accountability Coach - Next.js UI",
+  "name": "10x-accountability-coach",
+  "version": "3.0.0",
+  "description": "10X Accountability Coach - Next.js UI (Powered by OpenAnalyst)",
   "private": true,
   "scripts": {
     "dev": "next dev",

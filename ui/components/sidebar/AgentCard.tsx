@@ -75,12 +75,12 @@ export function AgentCard({ agent, isActive, onClick }: AgentCardProps) {
     <motion.button
       onClick={handleClick}
       className={`
-        w-full text-left mx-3 px-4 py-2.5 rounded-lg text-sm font-medium
+        w-full text-left mx-3 px-3 py-2.5 rounded-xl text-sm font-medium
         transition-all duration-200 border
         ${
           isActiveSelection
-            ? `${colorStyle.activeBg} text-white shadow-md border-transparent`
-            : `${colorStyle.bg} ${colorStyle.border} text-oa-text-primary hover:${colorStyle.bg.replace('/10', '/20')}`
+            ? `${colorStyle.activeBg} text-white shadow-lg border-transparent`
+            : `bg-oa-bg-secondary/50 ${colorStyle.border} text-oa-text-primary hover:bg-oa-bg-secondary`
         }
       `}
       whileHover={{ scale: 1.02, x: 2 }}
@@ -92,18 +92,37 @@ export function AgentCard({ agent, isActive, onClick }: AgentCardProps) {
       }}
     >
       <div className="flex items-center gap-3">
-        <motion.span
-          className={`text-lg w-8 h-8 flex items-center justify-center rounded-md ${
-            isActiveSelection ? 'bg-white/20' : colorStyle.bg
+        {/* Agent Icon with color background */}
+        <motion.div
+          className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg shadow-sm ${
+            isActiveSelection
+              ? 'bg-white/20'
+              : `${colorStyle.activeBg} shadow-md`
           }`}
-          animate={{ rotate: isActiveSelection ? [0, -10, 10, -10, 0] : 0 }}
-          transition={{ duration: 0.5 }}
+          animate={{
+            scale: isActiveSelection ? [1, 1.1, 1] : 1,
+          }}
+          transition={{ duration: 0.3 }}
         >
-          {agent.icon}
-        </motion.span>
-        <span className={isActiveSelection ? 'text-white' : colorStyle.text}>
-          {agent.name}
-        </span>
+          <span className={isActiveSelection ? '' : 'drop-shadow-sm'}>
+            {agent.icon || '🤖'}
+          </span>
+        </motion.div>
+        {/* Agent Name */}
+        <div className="flex-1 min-w-0">
+          <span className={`block truncate ${isActiveSelection ? 'text-white font-semibold' : colorStyle.text}`}>
+            {agent.name}
+          </span>
+        </div>
+        {/* Active indicator */}
+        {isActiveSelection && (
+          <motion.div
+            className="w-2 h-2 rounded-full bg-white"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 500 }}
+          />
+        )}
       </div>
     </motion.button>
   )
