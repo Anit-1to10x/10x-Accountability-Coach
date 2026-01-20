@@ -4,8 +4,8 @@
 - **ID:** app-tutorial
 - **Type:** learning
 - **Status:** active
-- **Start Date:** 2025-01-01
-- **Target Date:** 2025-01-07
+- **Start Date:** 2026-01-01
+- **Target Date:** 2026-01-07
 - **Daily Hours:** 0.5
 - **Agent:** accountability-coach
 
@@ -39,4 +39,4 @@ Day 7: Advanced Features & Tips
 ## Notes
 This is your introduction to the 10X Accountability Coach. Complete this tutorial to unlock the full potential of the app!
 
-Created: 2025-01-01
+Created: 2026-01-01

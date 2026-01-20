@@ -4,8 +4,8 @@
 - **ID:** 10x-vibe-marketing
 - **Type:** learning
 - **Status:** coming_soon
-- **Start Date:** 2025-01-15
-- **Target Date:** 2025-02-14
+- **Start Date:** 2026-01-15
+- **Target Date:** 2026-02-14
 - **Daily Hours:** 2
 - **Agent:** accountability-coach
 
@@ -43,4 +43,4 @@ Week 4: Engagement & Community Growth
 ## Notes
 This challenge will transform how you approach marketing. Focus on authenticity over perfection.
 
-Created: 2025-01-01
+Created: 2026-01-01
