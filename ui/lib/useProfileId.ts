@@ -1,18 +1,12 @@
 // Hook to get active profile ID from localStorage
-// Defaults to Arjun (owner) if no profile is set
+// Returns null if no profile is set - user needs to complete onboarding
 export function useProfileId(): string | null {
   if (typeof window === 'undefined') return null
 
   const stored = localStorage.getItem('activeProfileId')
 
-  // If no profile is set, default to Arjun (owner)
-  if (!stored) {
-    const defaultProfile = 'arjun-gmail-com'
-    localStorage.setItem('activeProfileId', defaultProfile)
-    return defaultProfile
-  }
-
-  return stored
+  // Return null if no profile is set - user needs to complete onboarding
+  return stored || null
 }
 
 // Helper to add profileId to fetch URL

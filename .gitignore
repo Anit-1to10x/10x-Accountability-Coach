@@ -54,6 +54,9 @@ yarn-error.log*
 
 # Premium features (not included in public repo)
 premium-white-label-kit/
+premium-white-label-kit.zip
+white-label/
+*.white-label.*
 
 # Misc
 .turbo

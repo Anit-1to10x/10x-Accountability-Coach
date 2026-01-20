@@ -1,24 +1,285 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from 'react'
-import { motion } from 'framer-motion'
+import React, { useEffect, useState, useRef, useMemo } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTodoStore } from '@/lib/store'
 import { Input, Button, Card } from '@/components/ui'
-import { CheckCircle2, Circle, Plus, Calendar } from 'lucide-react'
+import {
+  CheckCircle2,
+  Circle,
+  Plus,
+  Calendar,
+  Clock,
+  Target,
+  X,
+  ArrowLeft,
+  ChevronRight,
+  Trash2,
+  Edit2,
+  CheckCircle,
+  Flame
+} from 'lucide-react'
 import Link from 'next/link'
 
+interface TodoDetailProps {
+  todo: any
+  onClose: () => void
+  onToggle: (id: string) => void
+  onDelete?: (id: string) => void
+}
+
+function TodoDetailPanel({ todo, onClose, onToggle, onDelete }: TodoDetailProps) {
+  const router = useRouter()
+  const isCompleted = todo.status === 'completed'
+
+  return (
+    <motion.div
+      initial={{ x: '100%' }}
+      animate={{ x: 0 }}
+      exit={{ x: '100%' }}
+      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+      className="fixed right-0 top-0 h-full w-full max-w-md bg-oa-bg-primary border-l border-oa-border shadow-2xl z-50 flex flex-col"
+    >
+      {/* Header */}
+      <div className="p-4 border-b border-oa-border flex items-center justify-between">
+        <button
+          onClick={onClose}
+          className="flex items-center gap-2 text-oa-text-secondary hover:text-oa-text-primary transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm">Back to Todos</span>
+        </button>
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-oa-bg-secondary rounded-lg transition-colors"
+        >
+          <X className="w-5 h-5 text-oa-text-secondary" />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        {/* Status badge */}
+        <div className="flex items-center gap-3 mb-4">
+          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+            isCompleted
+              ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+              : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
+          }`}>
+            {isCompleted ? 'Completed' : 'Pending'}
+          </span>
+          {todo.priority && (
+            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+              todo.priority === 'high'
+                ? 'border-red-500/30 text-red-400 bg-red-500/10'
+                : todo.priority === 'medium'
+                ? 'border-yellow-500/30 text-yellow-400 bg-yellow-500/10'
+                : 'border-green-500/30 text-green-400 bg-green-500/10'
+            }`}>
+              {todo.priority} priority
+            </span>
+          )}
+        </div>
+
+        {/* Title */}
+        <h2 className={`text-xl font-semibold mb-4 ${isCompleted ? 'line-through text-oa-text-secondary' : 'text-oa-text-primary'}`}>
+          {todo.text || todo.title}
+        </h2>
+
+        {/* Description */}
+        {todo.description && (
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-oa-text-secondary mb-2">Description</h3>
+            <p className="text-oa-text-primary">{todo.description}</p>
+          </div>
+        )}
+
+        {/* Metadata */}
+        <div className="space-y-4 mb-6">
+          {todo.time && (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-oa-bg-secondary flex items-center justify-center">
+                <Clock className="w-5 h-5 text-oa-accent" />
+              </div>
+              <div>
+                <div className="text-xs text-oa-text-secondary">Scheduled Time</div>
+                <div className="text-sm font-medium text-oa-text-primary">{todo.time}</div>
+              </div>
+            </div>
+          )}
+
+          {todo.date && (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-oa-bg-secondary flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-oa-accent" />
+              </div>
+              <div>
+                <div className="text-xs text-oa-text-secondary">Date</div>
+                <div className="text-sm font-medium text-oa-text-primary">
+                  {new Date(todo.date).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {todo.createdAt && (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-oa-bg-secondary flex items-center justify-center">
+                <Edit2 className="w-5 h-5 text-oa-text-secondary" />
+              </div>
+              <div>
+                <div className="text-xs text-oa-text-secondary">Created</div>
+                <div className="text-sm font-medium text-oa-text-primary">
+                  {new Date(todo.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {todo.challengeName && (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-oa-accent/10 flex items-center justify-center">
+                <Target className="w-5 h-5 text-oa-accent" />
+              </div>
+              <div>
+                <div className="text-xs text-oa-text-secondary">Challenge</div>
+                <div className="text-sm font-medium text-oa-text-primary">{todo.challengeName}</div>
+              </div>
+            </div>
+          )}
+
+          {todo.day && (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                <Flame className="w-5 h-5 text-orange-500" />
+              </div>
+              <div>
+                <div className="text-xs text-oa-text-secondary">Day</div>
+                <div className="text-sm font-medium text-oa-text-primary">Day {todo.day}</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Related Challenge Link */}
+        {todo.challengeId && (
+          <div className="p-4 bg-oa-bg-secondary rounded-lg border border-oa-border mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-oa-text-secondary mb-1">Part of Challenge</div>
+                <div className="text-sm font-medium text-oa-text-primary">{todo.challengeName || 'View Challenge'}</div>
+              </div>
+              <button
+                onClick={() => router.push(`/streak/${todo.challengeId}`)}
+                className="flex items-center gap-1 text-oa-accent text-sm hover:underline"
+              >
+                View
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="p-4 border-t border-oa-border flex gap-3">
+        <button
+          onClick={() => onToggle(todo.id)}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
+            isCompleted
+              ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/20'
+              : 'bg-green-500/10 text-green-400 border border-green-500/30 hover:bg-green-500/20'
+          }`}
+        >
+          <CheckCircle className="w-5 h-5" />
+          {isCompleted ? 'Mark Incomplete' : 'Mark Complete'}
+        </button>
+        {onDelete && (
+          <button
+            onClick={() => onDelete(todo.id)}
+            className="px-4 py-3 rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
 export default function TodosPage() {
-  const { todos, loadTodos, addTodo, toggleTodo } = useTodoStore()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { todos, loadTodos, addTodo, toggleTodo, deleteTodo } = useTodoStore()
   const [newTodoTitle, setNewTodoTitle] = useState('')
+  const [selectedTodo, setSelectedTodo] = useState<any | null>(null)
+  const [challengeTasks, setChallengeTasks] = useState<any[]>([])
   const hasLoaded = useRef(false)
 
+  // Get URL params from calendar navigation
+  const todoId = searchParams.get('id')
+  const todoDate = searchParams.get('date')
+  const todoType = searchParams.get('type')
+
+  // Load todos and challenge tasks
   useEffect(() => {
-    // Only load if store is empty or hasn't been loaded yet
-    if (!hasLoaded.current && (!todos || todos.length === 0)) {
+    if (!hasLoaded.current) {
       hasLoaded.current = true
       loadTodos()
+      loadChallengeTasks()
     }
   }, [])
+
+  // Load challenge tasks from API
+  const loadChallengeTasks = async () => {
+    try {
+      const res = await fetch('/api/todos/from-challenges')
+      const data = await res.json()
+      setChallengeTasks(data.events || [])
+    } catch (error) {
+      console.error('Failed to load challenge tasks:', error)
+    }
+  }
+
+  // Find and select the todo when coming from calendar
+  useEffect(() => {
+    if (todoId && (todos.length > 0 || challengeTasks.length > 0)) {
+      // First check regular todos
+      let foundTodo = todos.find(t => t.id === todoId)
+
+      // If not found, check challenge tasks
+      if (!foundTodo) {
+        foundTodo = challengeTasks.find(t => t.id === todoId)
+      }
+
+      // If still not found but we have date, try matching by date and close to the position
+      if (!foundTodo && todoDate) {
+        // Look for todos on the same date
+        const matchingTodos = [...todos, ...challengeTasks].filter(t =>
+          t.date === todoDate || new Date(t.createdAt).toISOString().split('T')[0] === todoDate
+        )
+        if (matchingTodos.length > 0) {
+          foundTodo = matchingTodos[0]
+        }
+      }
+
+      if (foundTodo) {
+        setSelectedTodo(foundTodo)
+      }
+    }
+  }, [todoId, todoDate, todos, challengeTasks])
 
   const handleAddTodo = async () => {
     if (!newTodoTitle.trim()) return
@@ -33,30 +294,117 @@ export default function TodosPage() {
     setNewTodoTitle('')
   }
 
+  const handleToggleTodo = async (id: string) => {
+    // Check if it's a challenge task
+    const challengeTask = challengeTasks.find(t => t.id === id)
+    if (challengeTask) {
+      // Handle challenge task toggle
+      try {
+        const newStatus = challengeTask.status === 'completed' ? 'pending' : 'completed'
+        const res = await fetch('/api/todos/challenge-task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            challengeId: challengeTask.challengeId,
+            day: challengeTask.day,
+            title: challengeTask.title,
+            completed: newStatus === 'completed'
+          })
+        })
+        if (res.ok) {
+          // Update local state
+          setChallengeTasks(prev =>
+            prev.map(t => t.id === id ? { ...t, status: newStatus } : t)
+          )
+          if (selectedTodo?.id === id) {
+            setSelectedTodo({ ...selectedTodo, status: newStatus })
+          }
+        }
+      } catch (error) {
+        console.error('Failed to toggle challenge task:', error)
+      }
+    } else {
+      // Regular todo toggle
+      await toggleTodo(id)
+      if (selectedTodo?.id === id) {
+        const updatedTodo = todos.find(t => t.id === id)
+        if (updatedTodo) {
+          setSelectedTodo({
+            ...selectedTodo,
+            status: updatedTodo.status === 'completed' ? 'pending' : 'completed'
+          })
+        }
+      }
+    }
+  }
+
+  const handleDeleteTodo = async (id: string) => {
+    if (deleteTodo) {
+      await deleteTodo(id)
+      setSelectedTodo(null)
+      // Clear URL params
+      router.replace('/todos')
+    }
+  }
+
+  const handleCloseDetail = () => {
+    setSelectedTodo(null)
+    // Clear URL params
+    router.replace('/todos')
+  }
+
   // Get today and yesterday dates
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const yesterday = new Date(today)
   yesterday.setDate(yesterday.getDate() - 1)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
 
-  // Filter todos by date
-  const todayTodos = Array.isArray(todos)
-    ? todos.filter((t) => {
-        const createdDate = new Date(t.createdAt)
-        createdDate.setHours(0, 0, 0, 0)
-        return createdDate.getTime() === today.getTime()
-      })
-    : []
+  // Combine and filter todos by date
+  const allTodos = useMemo(() => {
+    const combined = [
+      ...todos.map(t => ({ ...t, source: 'regular' })),
+      ...challengeTasks.map(t => ({ ...t, source: 'challenge' }))
+    ]
+    return combined
+  }, [todos, challengeTasks])
 
-  const yesterdayTodos = Array.isArray(todos)
-    ? todos.filter((t) => {
-        const createdDate = new Date(t.createdAt)
-        createdDate.setHours(0, 0, 0, 0)
-        return createdDate.getTime() === yesterday.getTime()
-      })
-    : []
+  const todayTodos = useMemo(() => {
+    return allTodos.filter((t) => {
+      const todoDate = new Date(t.date || t.createdAt)
+      todoDate.setHours(0, 0, 0, 0)
+      return todoDate.getTime() === today.getTime()
+    })
+  }, [allTodos, today])
+
+  const yesterdayTodos = useMemo(() => {
+    return allTodos.filter((t) => {
+      const todoDate = new Date(t.date || t.createdAt)
+      todoDate.setHours(0, 0, 0, 0)
+      return todoDate.getTime() === yesterday.getTime()
+    })
+  }, [allTodos, yesterday])
+
+  const upcomingTodos = useMemo(() => {
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return allTodos.filter((t) => {
+      const todoDate = new Date(t.date || t.createdAt)
+      todoDate.setHours(0, 0, 0, 0)
+      return todoDate.getTime() > today.getTime()
+    }).sort((a, b) => {
+      const dateA = new Date(a.date || a.createdAt).getTime()
+      const dateB = new Date(b.date || b.createdAt).getTime()
+      return dateA - dateB
+    })
+  }, [allTodos, today])
+
+  const earlierTodos = useMemo(() => {
+    return allTodos.filter((t) => {
+      const todoDate = new Date(t.date || t.createdAt)
+      todoDate.setHours(0, 0, 0, 0)
+      return todoDate.getTime() < yesterday.getTime()
+    })
+  }, [allTodos, yesterday])
 
   // Calculate progress
   const todayCompleted = todayTodos.filter((t) => t.status === 'completed').length
@@ -69,6 +417,7 @@ export default function TodosPage() {
 
   const TodoItem = ({ todo, showDate = false }: { todo: any; showDate?: boolean }) => {
     const isCompleted = todo.status === 'completed'
+    const isSelected = selectedTodo?.id === todo.id
 
     return (
       <motion.div
@@ -77,9 +426,19 @@ export default function TodosPage() {
         exit={{ opacity: 0, y: -10 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       >
-        <Card className="flex items-start gap-3 p-4 hover:border-oa-accent/30 transition-colors">
+        <Card
+          className={`flex items-start gap-3 p-4 cursor-pointer transition-all ${
+            isSelected
+              ? 'border-oa-accent bg-oa-accent/5'
+              : 'hover:border-oa-accent/30'
+          }`}
+          onClick={() => setSelectedTodo(todo)}
+        >
           <button
-            onClick={() => toggleTodo(todo.id)}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleToggleTodo(todo.id)
+            }}
             className="mt-0.5 flex-shrink-0 transition-colors"
           >
             {isCompleted ? (
@@ -96,25 +455,45 @@ export default function TodosPage() {
             >
               {todo.text || todo.title}
             </div>
-            {todo.description && (
-              <div className="text-sm text-oa-text-secondary mt-1">{todo.description}</div>
+            {todo.challengeName && (
+              <div className="flex items-center gap-1 text-xs text-oa-accent mt-1">
+                <Target className="w-3 h-3" />
+                {todo.challengeName}
+                {todo.day && <span className="text-oa-text-secondary">Day {todo.day}</span>}
+              </div>
+            )}
+            {todo.time && (
+              <div className="flex items-center gap-1 text-xs text-oa-text-secondary mt-1">
+                <Clock className="w-3 h-3" />
+                {todo.time}
+              </div>
             )}
             {showDate && (
               <div className="text-xs text-oa-text-secondary mt-1">
-                {new Date(todo.createdAt).toLocaleDateString()}
+                {new Date(todo.date || todo.createdAt).toLocaleDateString()}
               </div>
             )}
           </div>
-          <div
-            className={`text-xs px-2 py-1 rounded border flex-shrink-0 ${
-              todo.priority === 'high'
-                ? 'border-red-500/30 text-red-500 bg-red-500/5'
-                : todo.priority === 'medium'
-                ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/5'
-                : 'border-green-500/30 text-green-500 bg-green-500/5'
-            }`}
-          >
-            {todo.priority}
+          <div className="flex items-center gap-2">
+            {todo.source === 'challenge' && (
+              <span className="text-xs px-2 py-0.5 rounded border border-oa-accent/30 text-oa-accent bg-oa-accent/5">
+                Challenge
+              </span>
+            )}
+            {todo.priority && (
+              <span
+                className={`text-xs px-2 py-1 rounded border flex-shrink-0 ${
+                  todo.priority === 'high'
+                    ? 'border-red-500/30 text-red-500 bg-red-500/5'
+                    : todo.priority === 'medium'
+                    ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/5'
+                    : 'border-green-500/30 text-green-500 bg-green-500/5'
+                }`}
+              >
+                {todo.priority}
+              </span>
+            )}
+            <ChevronRight className="w-4 h-4 text-oa-text-secondary" />
           </div>
         </Card>
       </motion.div>
@@ -184,6 +563,29 @@ export default function TodosPage() {
             </div>
           </div>
 
+          {/* Upcoming Todos */}
+          {upcomingTodos.length > 0 && (
+            <div>
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-oa-text-primary">
+                  Upcoming
+                </h2>
+              </div>
+              <div className="space-y-2">
+                {upcomingTodos.slice(0, 10).map((todo) => (
+                  <TodoItem key={todo.id} todo={todo} showDate />
+                ))}
+                {upcomingTodos.length > 10 && (
+                  <div className="text-center py-2">
+                    <Link href="/schedule" className="text-sm text-oa-accent hover:underline">
+                      View all {upcomingTodos.length} upcoming tasks in Calendar
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Yesterday's Todos */}
           {yesterdayTodos.length > 0 && (
             <div>
@@ -215,32 +617,16 @@ export default function TodosPage() {
             </div>
           )}
 
-          {/* All Other Todos */}
-          {todos.filter((t) => {
-            const createdDate = new Date(t.createdAt)
-            createdDate.setHours(0, 0, 0, 0)
-            return (
-              createdDate.getTime() !== today.getTime() &&
-              createdDate.getTime() !== yesterday.getTime()
-            )
-          }).length > 0 && (
+          {/* Earlier Todos */}
+          {earlierTodos.length > 0 && (
             <div>
               <h2 className="text-lg font-semibold text-oa-text-secondary mb-4">
                 Earlier
               </h2>
               <div className="space-y-2 opacity-60">
-                {todos
-                  .filter((t) => {
-                    const createdDate = new Date(t.createdAt)
-                    createdDate.setHours(0, 0, 0, 0)
-                    return (
-                      createdDate.getTime() !== today.getTime() &&
-                      createdDate.getTime() !== yesterday.getTime()
-                    )
-                  })
-                  .map((todo) => (
-                    <TodoItem key={todo.id} todo={todo} showDate />
-                  ))}
+                {earlierTodos.map((todo) => (
+                  <TodoItem key={todo.id} todo={todo} showDate />
+                ))}
               </div>
             </div>
           )}
@@ -252,22 +638,45 @@ export default function TodosPage() {
                 <Calendar className="w-6 h-6 text-oa-accent" />
                 <div>
                   <h3 className="text-base font-medium text-oa-text-primary">
-                    Challenge Tasks
+                    View Full Calendar
                   </h3>
                   <p className="text-sm text-oa-text-secondary">
-                    View and manage your challenge tasks in the Schedule
+                    See all your tasks and challenges in calendar view
                   </p>
                 </div>
               </div>
               <Link href="/schedule">
                 <Button variant="outline" className="border-oa-accent text-oa-accent hover:bg-oa-accent hover:text-white">
-                  View Schedule
+                  View Calendar
                 </Button>
               </Link>
             </div>
           </Card>
         </div>
       </div>
+
+      {/* Todo Detail Panel */}
+      <AnimatePresence>
+        {selectedTodo && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/30 z-40"
+              onClick={handleCloseDetail}
+            />
+            {/* Detail Panel */}
+            <TodoDetailPanel
+              todo={selectedTodo}
+              onClose={handleCloseDetail}
+              onToggle={handleToggleTodo}
+              onDelete={selectedTodo.source !== 'challenge' ? handleDeleteTodo : undefined}
+            />
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

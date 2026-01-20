@@ -69,7 +69,12 @@ export default function ChallengesPage() {
     isOpen: false,
     challenge: null
   })
+  const [detailModal, setDetailModal] = useState<{ isOpen: boolean; challenge: Challenge | null }>({
+    isOpen: false,
+    challenge: null
+  })
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     if (!hasLoaded.current) {
@@ -90,9 +95,50 @@ export default function ChallengesPage() {
     }
   }
 
+  const handleChallengeClick = (challenge: Challenge) => {
+    setDetailModal({ isOpen: true, challenge })
+  }
+
   const handleDeleteClick = (e: React.MouseEvent, challenge: Challenge) => {
     e.stopPropagation() // Prevent navigation to challenge detail
     setDeleteModal({ isOpen: true, challenge })
+  }
+
+  const handleUpdateStatus = async (challengeId: string, newStatus: 'active' | 'paused' | 'completed') => {
+    setIsUpdating(true)
+    try {
+      const profileId = localStorage.getItem('activeProfileId')
+      const url = profileId
+        ? `/api/challenges/${challengeId}?profileId=${profileId}`
+        : `/api/challenges/${challengeId}`
+
+      const res = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+      const data = await res.json()
+
+      if (data.success || data.challenge) {
+        // Update local state
+        setChallenges(prev => prev.map(c =>
+          c.id === challengeId ? { ...c, status: newStatus } : c
+        ))
+        // Update modal state if open
+        if (detailModal.challenge?.id === challengeId) {
+          setDetailModal(prev => ({
+            ...prev,
+            challenge: prev.challenge ? { ...prev.challenge, status: newStatus } : null
+          }))
+        }
+      } else {
+        console.error('Failed to update challenge:', data.error)
+      }
+    } catch (error) {
+      console.error('Failed to update challenge:', error)
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   const handleConfirmDelete = async () => {
@@ -132,6 +178,8 @@ export default function ChallengesPage() {
         return 'bg-blue-500/10 text-blue-400 border-blue-500/30'
       case 'failed':
         return 'bg-red-500/10 text-red-400 border-red-500/30'
+      case 'coming_soon':
+        return 'bg-purple-500/10 text-purple-400 border-purple-500/30'
       default:
         return 'bg-gray-500/10 text-gray-400 border-gray-500/30'
     }
@@ -147,6 +195,8 @@ export default function ChallengesPage() {
         return <CheckCircle className="w-3 h-3" />
       case 'failed':
         return <XCircle className="w-3 h-3" />
+      case 'coming_soon':
+        return <Clock className="w-3 h-3" />
       default:
         return <Clock className="w-3 h-3" />
     }
@@ -273,7 +323,7 @@ export default function ChallengesPage() {
                 <motion.div
                   key={challenge.id}
                   className="bg-oa-bg-secondary border border-oa-border rounded-lg p-5 cursor-pointer hover:border-oa-accent group transition-all"
-                  onClick={() => router.push(`/streak/${challenge.id}`)}
+                  onClick={() => handleChallengeClick(challenge)}
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -384,6 +434,168 @@ export default function ChallengesPage() {
           </div>
         </div>
       </div>
+
+      {/* Challenge Detail Modal */}
+      {detailModal.isOpen && detailModal.challenge && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <motion.div
+            className="bg-oa-bg-primary border border-oa-border rounded-xl w-full max-w-lg overflow-hidden"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+          >
+            {/* Header */}
+            <div className="p-6 border-b border-oa-border">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    detailModal.challenge.status === 'active' ? 'bg-green-500/10' :
+                    detailModal.challenge.status === 'paused' ? 'bg-yellow-500/10' :
+                    detailModal.challenge.status === 'completed' ? 'bg-blue-500/10' : 'bg-gray-500/10'
+                  }`}>
+                    <Target className={`w-6 h-6 ${
+                      detailModal.challenge.status === 'active' ? 'text-green-400' :
+                      detailModal.challenge.status === 'paused' ? 'text-yellow-400' :
+                      detailModal.challenge.status === 'completed' ? 'text-blue-400' : 'text-gray-400'
+                    }`} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-oa-text-primary">
+                      {detailModal.challenge.name}
+                    </h2>
+                    <span className={`text-xs px-2 py-0.5 rounded-full border ${getStatusColor(detailModal.challenge.status)}`}>
+                      {detailModal.challenge.status}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDetailModal({ isOpen: false, challenge: null })}
+                  className="p-2 hover:bg-oa-bg-secondary rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-oa-text-secondary" />
+                </button>
+              </div>
+            </div>
+
+            {/* Challenge Stats */}
+            <div className="p-6 border-b border-oa-border">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-oa-bg-secondary rounded-lg">
+                  <div className="flex items-center justify-center gap-1 text-orange-500 mb-1">
+                    <Flame className="w-5 h-5" />
+                    <span className="text-xl font-bold">{detailModal.challenge.streak?.current || 0}</span>
+                  </div>
+                  <div className="text-xs text-oa-text-secondary">Current Streak</div>
+                </div>
+                <div className="text-center p-3 bg-oa-bg-secondary rounded-lg">
+                  <div className="flex items-center justify-center gap-1 text-yellow-500 mb-1">
+                    <Trophy className="w-5 h-5" />
+                    <span className="text-xl font-bold">{detailModal.challenge.streak?.best || 0}</span>
+                  </div>
+                  <div className="text-xs text-oa-text-secondary">Best Streak</div>
+                </div>
+                <div className="text-center p-3 bg-oa-bg-secondary rounded-lg">
+                  <div className="flex items-center justify-center gap-1 text-blue-500 mb-1">
+                    <TrendingUp className="w-5 h-5" />
+                    <span className="text-xl font-bold">{detailModal.challenge.progress || 0}%</span>
+                  </div>
+                  <div className="text-xs text-oa-text-secondary">Progress</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Goal & Details */}
+            <div className="p-6 border-b border-oa-border">
+              <h3 className="text-sm font-semibold text-oa-text-primary mb-2">Goal</h3>
+              <p className="text-sm text-oa-text-secondary mb-4">
+                {detailModal.challenge.goal || 'No goal set'}
+              </p>
+
+              <div className="flex items-center gap-4 text-sm text-oa-text-secondary">
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  <span>Started: {new Date(detailModal.challenge.startDate).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  <span>{detailModal.challenge.totalDays || 30} days total</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="p-6">
+              <h3 className="text-sm font-semibold text-oa-text-primary mb-3">Actions</h3>
+              <div className="flex flex-wrap gap-2">
+                {detailModal.challenge.status === 'active' && (
+                  <>
+                    <button
+                      onClick={() => handleUpdateStatus(detailModal.challenge!.id, 'paused')}
+                      disabled={isUpdating}
+                      className="flex items-center gap-2 px-4 py-2 bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 rounded-lg hover:bg-yellow-500/20 transition-colors disabled:opacity-50"
+                    >
+                      <Pause className="w-4 h-4" />
+                      Pause Challenge
+                    </button>
+                    <button
+                      onClick={() => handleUpdateStatus(detailModal.challenge!.id, 'completed')}
+                      disabled={isUpdating}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Mark Complete
+                    </button>
+                  </>
+                )}
+                {detailModal.challenge.status === 'paused' && (
+                  <button
+                    onClick={() => handleUpdateStatus(detailModal.challenge!.id, 'active')}
+                    disabled={isUpdating}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-400 border border-green-500/30 rounded-lg hover:bg-green-500/20 transition-colors disabled:opacity-50"
+                  >
+                    <Play className="w-4 h-4" />
+                    Resume Challenge
+                  </button>
+                )}
+                {(detailModal.challenge.status === 'completed' || detailModal.challenge.status === 'failed') && (
+                  <button
+                    onClick={() => handleUpdateStatus(detailModal.challenge!.id, 'active')}
+                    disabled={isUpdating}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-400 border border-green-500/30 rounded-lg hover:bg-green-500/20 transition-colors disabled:opacity-50"
+                  >
+                    <Play className="w-4 h-4" />
+                    Restart Challenge
+                  </button>
+                )}
+                <button
+                  onClick={() => router.push(`/streak/${detailModal.challenge!.id}`)}
+                  className="flex items-center gap-2 px-4 py-2 bg-oa-accent/10 text-oa-accent border border-oa-accent/30 rounded-lg hover:bg-oa-accent/20 transition-colors"
+                >
+                  <Flame className="w-4 h-4" />
+                  View Streak Details
+                </button>
+                <button
+                  onClick={(e) => {
+                    handleDeleteClick(e, detailModal.challenge!)
+                    setDetailModal({ isOpen: false, challenge: null })
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/20 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </div>
+
+              {isUpdating && (
+                <div className="mt-3 flex items-center gap-2 text-sm text-oa-text-secondary">
+                  <div className="w-4 h-4 border-2 border-oa-accent/30 border-t-oa-accent rounded-full animate-spin" />
+                  Updating...
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleteModal.isOpen && deleteModal.challenge && (
