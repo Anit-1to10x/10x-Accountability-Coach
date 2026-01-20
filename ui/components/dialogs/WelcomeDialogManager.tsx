@@ -1,38 +1,33 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { FirstTimeWelcomeDialog } from './FirstTimeWelcomeDialog'
 import { DailySummaryDialog } from './DailySummaryDialog'
+import { MandatoryOnboarding } from './MandatoryOnboarding'
 import { useProfileId } from '@/lib/useProfileId'
 
 /**
  * Welcome Dialog Manager
  *
  * Determines which dialog to show based on user status:
- * - NEW users: FirstTimeWelcomeDialog (shows only once, ever)
+ * - NO PROFILE: MandatoryOnboarding (cannot be skipped, must complete)
+ * - NEW users with profile: FirstTimeWelcomeDialog (shows only once, ever)
  * - RETURNING users: DailySummaryDialog (shows on each session)
  *
  * Uses localStorage to track:
+ * - activeProfileId: Whether user has completed onboarding
  * - welcomeCompleted_{profileId}: Whether first-time welcome was shown
  * - lastSessionDate_{profileId}: Last date the daily summary was shown
  */
 export function WelcomeDialogManager() {
   const profileId = useProfileId()
+  const [showMandatoryOnboarding, setShowMandatoryOnboarding] = useState(false)
   const [showFirstTimeWelcome, setShowFirstTimeWelcome] = useState(false)
   const [showDailySummary, setShowDailySummary] = useState(false)
   const [userName, setUserName] = useState('there')
   const [isChecking, setIsChecking] = useState(true)
 
-  useEffect(() => {
-    if (!profileId) {
-      setIsChecking(false)
-      return
-    }
-
-    checkDialogStatus()
-  }, [profileId])
-
-  async function checkDialogStatus() {
+  const checkDialogStatus = useCallback(async () => {
     setIsChecking(true)
 
     try {
@@ -75,6 +70,26 @@ export function WelcomeDialogManager() {
     } finally {
       setIsChecking(false)
     }
+  }, [profileId])
+
+  useEffect(() => {
+    // No profile means user needs mandatory onboarding
+    if (!profileId) {
+      setShowMandatoryOnboarding(true)
+      setIsChecking(false)
+      return
+    }
+
+    // Has profile, check dialog status
+    setShowMandatoryOnboarding(false)
+    checkDialogStatus()
+  }, [profileId, checkDialogStatus])
+
+  const handleMandatoryOnboardingComplete = (data: { name: string; email: string }) => {
+    setShowMandatoryOnboarding(false)
+    setUserName(data.name)
+    // After mandatory onboarding, show the first-time welcome
+    setShowFirstTimeWelcome(true)
   }
 
   const handleFirstTimeComplete = () => {
@@ -97,15 +112,22 @@ export function WelcomeDialogManager() {
 
   return (
     <>
+      {/* Mandatory onboarding - cannot be skipped */}
+      {showMandatoryOnboarding && (
+        <MandatoryOnboarding onComplete={handleMandatoryOnboardingComplete} />
+      )}
+
+      {/* First-time welcome - shown after profile is created */}
       <FirstTimeWelcomeDialog
-        isOpen={showFirstTimeWelcome}
+        isOpen={showFirstTimeWelcome && !showMandatoryOnboarding}
         onClose={() => setShowFirstTimeWelcome(false)}
         userName={userName}
         onComplete={handleFirstTimeComplete}
       />
 
+      {/* Daily summary - shown on each new session */}
       <DailySummaryDialog
-        isOpen={showDailySummary}
+        isOpen={showDailySummary && !showMandatoryOnboarding}
         onClose={handleDailySummaryClose}
       />
     </>

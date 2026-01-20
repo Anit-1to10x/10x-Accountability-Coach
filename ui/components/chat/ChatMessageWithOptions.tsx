@@ -29,10 +29,10 @@ export function ChatMessageWithOptions({
 
   return (
     <div
-      className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'}`}
+      className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'} w-full`}
     >
       <div
-        className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+        className={`max-w-[85%] px-4 py-3 rounded-2xl break-words ${
           role === 'user'
             ? 'bg-oa-accent text-white rounded-br-sm'
             : 'bg-oa-bg-secondary border border-oa-border text-oa-text-primary rounded-bl-sm'
@@ -71,7 +71,7 @@ export function ChatMessageWithOptions({
 
         {/* Message content */}
         {content && (
-          <div className="text-sm whitespace-pre-wrap">
+          <div className="text-sm whitespace-pre-wrap break-words overflow-hidden">
             {content}
             {/* Streaming cursor indicator */}
             {isStreaming && (

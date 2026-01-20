@@ -45,9 +45,10 @@ export async function loadContextParallel(options: {
   selectedAgentIds?: string[] // For unified chat with multiple agents
   userMessage?: string
   files?: FileAttachment[]
+  timezone?: string // User's timezone for context-aware datetime
 }): Promise<ParallelLoadResult> {
   const startTime = Date.now()
-  const { profileId, agentId = 'unified', selectedAgentIds = [], userMessage = '', files = [] } = options
+  const { profileId, agentId = 'unified', selectedAgentIds = [], userMessage = '', files = [], timezone } = options
 
   // Start all operations in parallel
   const [
@@ -59,8 +60,8 @@ export async function loadContextParallel(options: {
     capabilitiesResult,
     ...fileResults
   ] = await Promise.allSettled([
-    // Core context
-    buildContext(profileId),
+    // Core context with timezone
+    buildContext(profileId, timezone),
 
     // User profile
     profileId ? loadUserProfile(profileId) : Promise.resolve(null),

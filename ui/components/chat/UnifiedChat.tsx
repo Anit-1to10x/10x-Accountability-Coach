@@ -288,65 +288,73 @@ ${firstStep.getMessage({})}`
   }
 
   return (
-    <div className="flex flex-col items-center w-full h-full">
-      {/* Centered content container */}
-      <div className="w-full max-w-3xl px-6 py-8 flex flex-col h-full">
-        {/* Greeting - shown when no messages */}
-        {showGreeting && currentMessages.length === 0 && (
-          <div className="mb-12">
-            <ChatGreeting agentName={agent?.name} selectedAgents={selectedAgents} />
-          </div>
-        )}
-
-        {/* Messages Area */}
+    <div className="flex flex-col w-full h-full overflow-hidden">
+      {/* Main chat container */}
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* Messages Area - scrollable */}
         <div
           ref={messagesContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto mb-6 space-y-4"
+          className="flex-1 overflow-y-auto px-4 py-6"
         >
-          {currentMessages.map((msg) => (
-            <ChatMessageWithOptions
-              key={msg.id}
-              message={msg}
-              onOptionSelect={handleOptionSelect}
-            />
-          ))}
+          <div className="max-w-3xl mx-auto">
+            {/* Greeting - shown when no messages */}
+            {showGreeting && currentMessages.length === 0 && (
+              <div className="mb-8">
+                <ChatGreeting agentName={agent?.name} selectedAgents={selectedAgents} />
+              </div>
+            )}
 
-          {/* Streaming Status - shows transparent status like Claude Code */}
-          {isTyping && (
-            <div className="flex justify-start px-2">
-              <StreamingStatus
-                phase={streamingPhase}
-                toolName={streamingDetails.toolName}
-                skillName={streamingDetails.skillName}
-                promptName={streamingDetails.promptName}
-                files={streamingDetails.files}
-                isVisible={true}
-              />
+            {/* Messages */}
+            <div className="space-y-6">
+              {currentMessages.map((msg) => (
+                <ChatMessageWithOptions
+                  key={msg.id}
+                  message={msg}
+                  onOptionSelect={handleOptionSelect}
+                />
+              ))}
+
+              {/* Streaming Status - shows transparent status like Claude Code */}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <StreamingStatus
+                    phase={streamingPhase}
+                    toolName={streamingDetails.toolName}
+                    skillName={streamingDetails.skillName}
+                    promptName={streamingDetails.promptName}
+                    files={streamingDetails.files}
+                    isVisible={true}
+                  />
+                </div>
+              )}
             </div>
-          )}
 
-          <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-4" />
+          </div>
         </div>
 
-        {/* Chat Input */}
-        <div className="mb-6">
-          <ChatInputEnhanced
-            onSend={handleSend}
-            disabled={isTyping}
-            placeholder={
-              agent
-                ? `Message ${agent.name}...`
-                : 'Type your message here...'
-            }
-            agent={agent}
-            onQuickAction={handleQuickAction}
-          />
-        </div>
+        {/* Fixed bottom section */}
+        <div className="flex-shrink-0 border-t border-oa-border bg-oa-bg-primary">
+          <div className="max-w-3xl mx-auto px-4 py-4">
+            {/* Chat Input */}
+            <ChatInputEnhanced
+              onSend={handleSend}
+              disabled={isTyping}
+              placeholder={
+                agent
+                  ? `Message ${agent.name}...`
+                  : 'Type your message here...'
+              }
+              agent={agent}
+              onQuickAction={handleQuickAction}
+            />
 
-        {/* Quick Actions Panel */}
-        <div className="border-t border-oa-border pt-6">
-          <QuickActionsPanel agent={agent} onCheckinClick={onCheckinClick} onCreateSkillClick={onCreateSkillClick} />
+            {/* Quick Actions Panel */}
+            <div className="mt-4 pt-4 border-t border-oa-border/50">
+              <QuickActionsPanel agent={agent} onCheckinClick={onCheckinClick} onCreateSkillClick={onCreateSkillClick} />
+            </div>
+          </div>
         </div>
       </div>
     </div>

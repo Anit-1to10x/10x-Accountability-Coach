@@ -3,8 +3,62 @@ import fs from 'fs/promises'
 import path from 'path'
 import { PATHS } from '@/lib/paths'
 
+// Calculate due date based on start date and day number
+function calculateDueDate(startDateStr: string, dayNum: number): string {
+  if (!startDateStr) {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  }
+
+  const [year, month, day] = startDateStr.split('-').map(Number)
+  const taskDate = new Date(year, month - 1, day + (dayNum - 1))
+  return `${taskDate.getFullYear()}-${String(taskDate.getMonth() + 1).padStart(2, '0')}-${String(taskDate.getDate()).padStart(2, '0')}`
+}
+
+// Parse enhanced task format: - [ ] Task | duration: X | priority: Y | flexibility: Z
+// followed by optional description: > description text
+function parseEnhancedTaskLine(text: string, index: number): {
+  title: string
+  duration: number
+  priority: string
+  flexibility: string
+  description: string
+} {
+  let title = text
+  let duration = 30
+  let priority = index < 2 ? 'high' : (index < 4 ? 'medium' : 'low')
+  let flexibility = 'flexible'
+  let description = ''
+
+  // Check for enhanced format: title | duration: X | priority: Y | flexibility: Z
+  if (text.includes('|')) {
+    const parts = text.split('|').map(p => p.trim())
+    title = parts[0]
+
+    for (const part of parts.slice(1)) {
+      const [key, value] = part.split(':').map(s => s.trim().toLowerCase())
+      if (key === 'duration') {
+        duration = parseInt(value) || 30
+      } else if (key === 'priority') {
+        priority = value || priority
+      } else if (key === 'flexibility') {
+        flexibility = value || 'flexible'
+      }
+    }
+  } else {
+    // Legacy format: Task name (10 min)
+    const durationMatch = text.match(/\((\d+)\s*min\)/)
+    if (durationMatch) {
+      duration = parseInt(durationMatch[1])
+      title = text.replace(/\s*\(\d+\s*min\)\s*(\(\d+\s*min\))?/, '').trim()
+    }
+  }
+
+  return { title, duration, priority, flexibility, description }
+}
+
 // Parse tasks from a daily MD file
-function parseTasksFromDayMd(content: string, challengeId: string, challengeName: string, dayNum: number, filename: string) {
+function parseTasksFromDayMd(content: string, challengeId: string, challengeName: string, dayNum: number, filename: string, startDateStr: string, challengeStatus: string) {
   const tasks: any[] = []
 
   // Extract title from first heading
@@ -14,33 +68,58 @@ function parseTasksFromDayMd(content: string, challengeId: string, challengeName
   // Extract status
   const isCompleted = content.includes('Status: completed') || content.includes('Completed:** Yes')
 
-  // Extract tasks (checkboxes)
-  const taskMatches = Array.from(content.matchAll(/- \[([ xX])\]\s*(.+)/g))
+  // Calculate due date for this day
+  const dueDate = calculateDueDate(startDateStr, dayNum)
+
+  // Split content into lines for multi-line parsing
+  const lines = content.split('\n')
   let taskIndex = 0
+  let i = 0
 
-  for (const match of taskMatches) {
-    const completed = match[1].toLowerCase() === 'x'
-    const text = match[2].trim()
+  while (i < lines.length) {
+    const line = lines[i]
 
-    // Extract duration if present (e.g., "Task name (10 min)")
-    const durationMatch = text.match(/\((\d+)\s*min\)/)
-    const duration = durationMatch ? parseInt(durationMatch[1]) : 30
+    // Match checkbox task
+    const taskMatch = line.match(/^- \[([ xX])\]\s*(.+)$/)
+    if (taskMatch) {
+      const completed = taskMatch[1].toLowerCase() === 'x'
+      const text = taskMatch[2].trim()
 
-    tasks.push({
-      id: `${challengeId}-day${dayNum}-task${taskIndex}`,
-      title: text.replace(/\s*\(\d+\s*min\)\s*(\(\d+\s*min\))?/, '').trim(), // Remove duration from title
-      text: text,
-      challengeId,
-      challengeName,
-      day: dayNum,
-      dayTitle,
-      status: completed ? 'completed' : 'pending',
-      completed,
-      duration,
-      priority: taskIndex < 2 ? 'high' : (taskIndex < 4 ? 'medium' : 'low'),
-      createdAt: filename.replace('.md', ''),
-    })
-    taskIndex++
+      // Parse enhanced format
+      const { title, duration, priority, flexibility } = parseEnhancedTaskLine(text, taskIndex)
+
+      // Check next line for description (starts with > or 2 spaces followed by >)
+      let description = ''
+      if (i + 1 < lines.length) {
+        const nextLine = lines[i + 1]
+        const descMatch = nextLine.match(/^\s*>\s*(.+)$/)
+        if (descMatch) {
+          description = descMatch[1].trim()
+          i++ // Skip the description line
+        }
+      }
+
+      tasks.push({
+        id: `${challengeId}-day${dayNum}-task${taskIndex}`,
+        title,
+        text: title,
+        description,
+        challengeId,
+        challengeName,
+        challengeStatus,
+        day: dayNum,
+        dayTitle,
+        dueDate,
+        status: completed ? 'completed' : 'pending',
+        completed,
+        duration,
+        priority,
+        flexibility,
+        createdAt: filename.replace('.md', ''),
+      })
+      taskIndex++
+    }
+    i++
   }
 
   return tasks
@@ -48,7 +127,7 @@ function parseTasksFromDayMd(content: string, challengeId: string, challengeName
 
 // Parse tasks from plan.md (when no days/ folder exists)
 // Format: ### Day N: Title followed by - [ ] tasks
-function parseTasksFromPlanMd(content: string, challengeId: string, challengeName: string) {
+function parseTasksFromPlanMd(content: string, challengeId: string, challengeName: string, startDateStr: string, challengeStatus: string) {
   const tasks: any[] = []
 
   // Split by day sections (### Day N: or #### Day N)
@@ -61,29 +140,57 @@ function parseTasksFromPlanMd(content: string, challengeId: string, challengeNam
     const dayTitle = sections[i + 1]?.trim() || `Day ${dayNum}`
     const sectionContent = sections[i + 2] || ''
 
-    // Find all tasks in this section (until next day header)
-    const sectionTaskMatches = Array.from(sectionContent.matchAll(/- \[([ xX])\]\s*(.+)/g))
+    // Calculate due date for this day
+    const dueDate = calculateDueDate(startDateStr, dayNum)
+
+    // Split section into lines for multi-line parsing
+    const sectionLines = sectionContent.split('\n')
     let taskIndex = 0
+    let lineIndex = 0
 
-    for (const match of sectionTaskMatches) {
-      const completed = match[1].toLowerCase() === 'x'
-      const text = match[2].trim()
+    while (lineIndex < sectionLines.length) {
+      const line = sectionLines[lineIndex]
+      const taskMatch = line.match(/^- \[([ xX])\]\s*(.+)$/)
 
-      tasks.push({
-        id: `${challengeId}-day${dayNum}-task${taskIndex}`,
-        title: text,
-        text: text,
-        challengeId,
-        challengeName,
-        day: dayNum,
-        dayTitle,
-        status: completed ? 'completed' : 'pending',
-        completed,
-        duration: 30,
-        priority: taskIndex < 2 ? 'high' : (taskIndex < 4 ? 'medium' : 'low'),
-        createdAt: 'plan',
-      })
-      taskIndex++
+      if (taskMatch) {
+        const completed = taskMatch[1].toLowerCase() === 'x'
+        const text = taskMatch[2].trim()
+
+        // Parse enhanced format
+        const { title, duration, priority, flexibility } = parseEnhancedTaskLine(text, taskIndex)
+
+        // Check next line for description
+        let description = ''
+        if (lineIndex + 1 < sectionLines.length) {
+          const nextLine = sectionLines[lineIndex + 1]
+          const descMatch = nextLine.match(/^\s*>\s*(.+)$/)
+          if (descMatch) {
+            description = descMatch[1].trim()
+            lineIndex++
+          }
+        }
+
+        tasks.push({
+          id: `${challengeId}-day${dayNum}-task${taskIndex}`,
+          title,
+          text: title,
+          description,
+          challengeId,
+          challengeName,
+          challengeStatus,
+          day: dayNum,
+          dayTitle,
+          dueDate,
+          status: completed ? 'completed' : 'pending',
+          completed,
+          duration,
+          priority,
+          flexibility,
+          createdAt: 'plan',
+        })
+        taskIndex++
+      }
+      lineIndex++
     }
   }
 
@@ -95,6 +202,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const dateFilter = searchParams.get('date') // Optional: filter by specific date/day
     const challengeFilter = searchParams.get('challengeId') // Optional: filter by challenge
+    const activeOnly = searchParams.get('activeOnly') !== 'false' // Default: only active challenges
 
     const challengesDir = PATHS.challenges
     const allTasks: any[] = []
@@ -109,13 +217,24 @@ export async function GET(request: NextRequest) {
       const challengeId = dir.name
       const challengeDir = path.join(challengesDir, challengeId)
 
-      // Get challenge name from challenge.md
+      // Get challenge metadata from challenge.md
       let challengeName = challengeId
+      let challengeStatus = 'active'
+      let startDateStr = ''
       try {
         const challengeMd = await fs.readFile(path.join(challengeDir, 'challenge.md'), 'utf-8')
         const nameMatch = challengeMd.match(/^#\s+(.+)$/m)
         if (nameMatch) challengeName = nameMatch[1].trim()
+
+        const statusMatch = challengeMd.match(/\*\*Status:\*\*\s*(.+)/i)
+        if (statusMatch) challengeStatus = statusMatch[1].trim().toLowerCase()
+
+        const dateMatch = challengeMd.match(/\*\*Start Date:\*\*\s*(.+)/i)
+        if (dateMatch) startDateStr = dateMatch[1].trim()
       } catch {}
+
+      // Skip if filtering active only and challenge is not active
+      if (activeOnly && challengeStatus !== 'active') continue
 
       // Check for days/ folder first
       const daysDir = path.join(challengeDir, 'days')
@@ -152,7 +271,7 @@ export async function GET(request: NextRequest) {
 
           const filePath = path.join(daysDir, filename)
           const content = await fs.readFile(filePath, 'utf-8')
-          const tasks = parseTasksFromDayMd(content, challengeId, challengeName, dayNum, filename)
+          const tasks = parseTasksFromDayMd(content, challengeId, challengeName, dayNum, filename, startDateStr, challengeStatus)
           allTasks.push(...tasks)
         }
       } else {
@@ -160,7 +279,7 @@ export async function GET(request: NextRequest) {
         const planPath = path.join(challengeDir, 'plan.md')
         try {
           const planContent = await fs.readFile(planPath, 'utf-8')
-          const tasks = parseTasksFromPlanMd(planContent, challengeId, challengeName)
+          const tasks = parseTasksFromPlanMd(planContent, challengeId, challengeName, startDateStr, challengeStatus)
 
           // Apply date filter if needed
           const filteredTasks = tasks.filter(task => {

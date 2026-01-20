@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useChallengeStore, useTodoStore } from '@/lib/store'
-import { ChevronDown, ChevronRight, Calendar, Clock, Target, Flame, CheckCircle2, Circle } from 'lucide-react'
+import { ChevronDown, ChevronRight, Calendar, Clock, Target, Flame, CheckCircle2, Circle, Timer } from 'lucide-react'
 import type { Challenge, Todo } from '@/types'
 
 export function RightPanel() {
@@ -25,44 +25,20 @@ export function RightPanel() {
     }
   }, [])
 
-  // Load challenge tasks from plan.md files
+  // Load challenge tasks from API (API now calculates due dates)
   const loadChallengeTasks = async () => {
     try {
-      // Fetch in parallel for faster loading
-      const [tasksRes, challengesRes] = await Promise.all([
-        fetch('/api/todos/from-challenges'),
-        fetch('/api/challenges')
-      ])
-      const [tasksData, challengesData] = await Promise.all([
-        tasksRes.json(),
-        challengesRes.json()
-      ])
-      const challengesList = challengesData.challenges || []
+      // API returns tasks with pre-calculated dueDates
+      const tasksRes = await fetch('/api/todos/from-challenges')
+      const tasksData = await tasksRes.json()
 
-      // Calculate dates for each task based on challenge start date
-      const tasksWithDates = (tasksData.tasks || []).map((task: any) => {
-        const challenge = challengesList.find((c: any) => c.id === task.challengeId)
-        const startDateStr = challenge?.startDate || challenge?.start_date
-        const isPaused = challenge?.status === 'paused'
+      // API now returns tasks with dueDate and challengeStatus
+      const tasksWithStatus = (tasksData.tasks || []).map((task: any) => ({
+        ...task,
+        isPaused: task.challengeStatus === 'paused'
+      }))
 
-        // Parse date string directly without timezone issues
-        // Format: "2026-01-01" -> add (day-1) days
-        let dueDateStr = startDateStr
-        if (startDateStr && task.day) {
-          const [year, month, day] = startDateStr.split('-').map(Number)
-          const taskDate = new Date(year, month - 1, day + (task.day - 1))
-          dueDateStr = `${taskDate.getFullYear()}-${String(taskDate.getMonth() + 1).padStart(2, '0')}-${String(taskDate.getDate()).padStart(2, '0')}`
-        }
-
-        return {
-          ...task,
-          dueDate: dueDateStr || new Date().toISOString().split('T')[0],
-          isPaused,
-          challengeStatus: challenge?.status || 'active'
-        }
-      })
-
-      setChallengeTasks(tasksWithDates)
+      setChallengeTasks(tasksWithStatus)
     } catch (error) {
       console.error('Failed to load challenge tasks:', error)
     }
@@ -188,13 +164,19 @@ export function RightPanel() {
                     {todo.isPaused && <span className="text-yellow-500">[PAUSED] </span>}
                     {todo.text || todo.title}
                   </p>
-                  {(todo.time || todo.challengeName) && (
-                    <div className="flex items-center gap-1 mt-0.5">
+                  {(todo.time || todo.challengeName || todo.duration) && (
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {todo.duration && (
+                        <span className="flex items-center gap-0.5 text-[10px] text-oa-text-secondary">
+                          <Timer className="w-3 h-3" />
+                          {todo.duration}m
+                        </span>
+                      )}
                       {todo.time && (
-                        <>
-                          <Clock className="w-3 h-3 text-oa-text-secondary" />
-                          <span className="text-[10px] text-oa-text-secondary">{todo.time}</span>
-                        </>
+                        <span className="flex items-center gap-0.5 text-[10px] text-oa-text-secondary">
+                          <Clock className="w-3 h-3" />
+                          {todo.time}
+                        </span>
                       )}
                       {todo.challengeName && (
                         <span className={`text-[10px] ${todo.isPaused ? 'text-yellow-500' : 'text-oa-accent'}`}>
@@ -265,6 +247,12 @@ export function RightPanel() {
                       {todo.text || todo.title}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
+                      {todo.duration && (
+                        <span className="flex items-center gap-0.5 text-[10px] text-oa-text-secondary">
+                          <Timer className="w-3 h-3" />
+                          {todo.duration}m
+                        </span>
+                      )}
                       {todo.time && (
                         <span className="text-[10px] text-oa-text-secondary">{todo.time}</span>
                       )}

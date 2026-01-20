@@ -159,7 +159,7 @@ interface FileAttachment {
 
 export async function POST(request: NextRequest) {
   try {
-    const { agentId, content, profileId, files, selectedAgentIds } = await request.json();
+    const { agentId, content, profileId, timezone, files, selectedAgentIds } = await request.json();
 
     if (!content) {
       return new Response(JSON.stringify({ error: 'Message content is required' }), {
@@ -169,10 +169,12 @@ export async function POST(request: NextRequest) {
     }
 
     const attachedFiles: FileAttachment[] = files || [];
+    const userTimezone = timezone || 'UTC';
 
     // 1. PARALLEL LOADING - Load all context data simultaneously
     // This is much faster than sequential loading
     // Pass selectedAgentIds for unified chat to combine capabilities
+    // Include timezone for context-aware datetime
     const {
       context,
       userProfileContext,
@@ -188,6 +190,7 @@ export async function POST(request: NextRequest) {
       selectedAgentIds: selectedAgentIds || [],
       userMessage: content,
       files: attachedFiles,
+      timezone: userTimezone,
     });
 
     console.log(`[chat/stream] Parallel context loaded in ${loadTime}ms`);

@@ -6,11 +6,16 @@
 Get familiar with the 10X Accountability Coach interface and navigation
 
 ## Tasks
-- [ ] Explore the left sidebar navigation
-- [ ] Visit the Calendar/Schedule page
-- [ ] Check out the Challenges page
-- [ ] Browse the Todos section
-- [ ] Open Settings and review options
+- [ ] Explore the left sidebar navigation | duration: 10 | priority: high | flexibility: flexible
+  > Navigate through each menu item in the sidebar to understand the app structure
+- [ ] Visit the Calendar/Schedule page | duration: 15 | priority: high | flexibility: flexible
+  > Open the calendar and explore different view modes (day, week, month)
+- [ ] Check out the Challenges page | duration: 15 | priority: medium | flexibility: flexible
+  > Browse active and available challenges to understand the challenge system
+- [ ] Browse the Todos section | duration: 10 | priority: medium | flexibility: flexible
+  > See how tasks are organized and displayed in the todo list
+- [ ] Open Settings and review options | duration: 10 | priority: low | flexibility: flexible
+  > Explore settings for customization options and preferences
 
 ## Learning Points
 1. **Left Sidebar** - Your main navigation hub

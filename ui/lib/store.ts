@@ -356,6 +356,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Get selected agent IDs from agent store (for unified chat with multiple agents)
       const selectedAgentIds = useAgentStore.getState().selectedAgentIds
 
+      // Get user's timezone for context-aware responses
+      const timezone = typeof window !== 'undefined'
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone
+        : 'UTC'
+
       // Use fetch streaming instead of WebSocket
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
@@ -364,6 +369,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           agentId,
           content,
           profileId,
+          timezone,
           files: filesWithContent.length > 0 ? filesWithContent : undefined,
           selectedAgentIds: agentId === 'unified' ? selectedAgentIds : undefined,
         }),

@@ -18,15 +18,22 @@ import { MiniCalendar } from './MiniCalendar'
 interface Event {
   id: string
   title: string
+  description?: string
   time?: string
+  endTime?: string
   date: string
+  dueDate?: string
   duration?: number
   status: 'completed' | 'pending' | 'cancelled' | 'missed'
   challengeName?: string
   challengeId?: string
   type: 'todo' | 'session' | 'task' | 'challenge-task'
   day?: number
+  dayTitle?: string
   priority?: string
+  flexibility?: 'fixed' | 'flexible'
+  isFixed?: boolean
+  overflow?: boolean
 }
 
 type ViewMode = 'day' | 'week' | 'month' | 'schedule'
@@ -38,8 +45,8 @@ interface CalendarEnhancedProps {
   onEventClick?: (event: Event) => void
 }
 
-// Hour height constant for timeline views
-const HOUR_HEIGHT = 48
+// Hour height constant for timeline views (60px = 1 hour for better spacing)
+const HOUR_HEIGHT = 60
 
 export function CalendarEnhanced({
   events = [],
@@ -610,12 +617,23 @@ function WeekView({
                         const eventMinute = event.time ? parseInt(event.time.split(':')[1]) : 0
                         const top = (eventMinute / 60) * HOUR_HEIGHT
                         const duration = event.duration || 30
-                        const height = Math.max((duration / 60) * HOUR_HEIGHT, 24)
+                        const height = Math.max((duration / 60) * HOUR_HEIGHT, 28)
+
+                        // Color scheme based on status and type
+                        const getEventColors = () => {
+                          if (event.status === 'completed') {
+                            return 'bg-emerald-500/20 border-l-emerald-500 text-emerald-700 dark:text-emerald-300'
+                          }
+                          if (event.type === 'challenge-task') {
+                            return 'bg-blue-500/20 border-l-blue-500 text-blue-700 dark:text-blue-300'
+                          }
+                          return 'bg-violet-500/20 border-l-violet-500 text-violet-700 dark:text-violet-300'
+                        }
 
                         return (
                           <div
                             key={event.id}
-                            className="absolute left-0.5 right-0.5 z-10"
+                            className="absolute left-1 right-1 z-10"
                             style={{
                               top: `${top}px`,
                               height: `${height}px`,
@@ -624,18 +642,22 @@ function WeekView({
                             <div
                               onClick={() => onEventClick?.(event)}
                               onDoubleClick={() => onEventStatusChange?.(event.id, event.status === 'completed' ? 'pending' as any : 'completed')}
-                              title="Click to view details, double-click to toggle status"
-                              className={`h-full rounded px-1.5 py-0.5 text-xs cursor-pointer overflow-hidden border-l-2 transition-all hover:shadow-md ${
-                                event.status === 'completed'
-                                  ? 'bg-green-500/10 border-green-500 text-green-600'
-                                  : 'bg-oa-accent/10 border-oa-accent text-oa-accent'
-                              }`}
+                              title={`${event.title}${event.description ? '\n' + event.description : ''}\nClick to view, double-click to toggle`}
+                              className={`h-full rounded-md px-2 py-1 text-xs cursor-pointer overflow-hidden border-l-[3px] transition-all hover:shadow-lg hover:scale-[1.02] ${getEventColors()}`}
                             >
-                              <div className={`font-medium truncate ${event.status === 'completed' ? 'line-through' : ''}`}>
+                              <div className={`font-semibold truncate leading-tight ${event.status === 'completed' ? 'line-through opacity-60' : ''}`}>
                                 {event.title}
                               </div>
-                              {height > 30 && event.time && (
-                                <div className="text-[10px] opacity-75">{event.time}</div>
+                              {height >= 40 && (
+                                <div className="text-[10px] opacity-70 mt-0.5 truncate">
+                                  {event.time && <span>{event.time}</span>}
+                                  {event.duration && <span> · {event.duration}m</span>}
+                                </div>
+                              )}
+                              {height >= 55 && event.challengeName && (
+                                <div className="text-[10px] opacity-60 truncate">
+                                  {event.challengeName}
+                                </div>
                               )}
                             </div>
                           </div>
@@ -741,12 +763,23 @@ function DayView({
                     const eventMinute = event.time ? parseInt(event.time.split(':')[1]) : 0
                     const top = (eventMinute / 60) * HOUR_HEIGHT
                     const duration = event.duration || 30
-                    const height = Math.max((duration / 60) * HOUR_HEIGHT, 32)
+                    const height = Math.max((duration / 60) * HOUR_HEIGHT, 36)
+
+                    // Color scheme based on status and type
+                    const getEventColors = () => {
+                      if (event.status === 'completed') {
+                        return 'bg-emerald-500/15 border-l-emerald-500 text-emerald-700 dark:text-emerald-300'
+                      }
+                      if (event.type === 'challenge-task') {
+                        return 'bg-blue-500/15 border-l-blue-500 text-blue-700 dark:text-blue-300'
+                      }
+                      return 'bg-violet-500/15 border-l-violet-500 text-violet-700 dark:text-violet-300'
+                    }
 
                     return (
                       <div
                         key={event.id}
-                        className="absolute left-1 right-4 z-10"
+                        className="absolute left-2 right-6 z-10"
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,
@@ -755,23 +788,26 @@ function DayView({
                         <div
                           onClick={() => onEventClick?.(event)}
                           onDoubleClick={() => onEventStatusChange?.(event.id, event.status === 'completed' ? 'pending' as any : 'completed')}
-                          title="Click to view details, double-click to toggle status"
-                          className={`h-full rounded-lg px-3 py-1.5 cursor-pointer border-l-4 transition-all hover:shadow-lg ${
-                            event.status === 'completed'
-                              ? 'bg-green-500/10 border-green-500 text-green-600'
-                              : 'bg-oa-accent/10 border-oa-accent text-oa-accent'
-                          }`}
+                          title={`${event.title}${event.description ? '\n' + event.description : ''}\nClick to view, double-click to toggle`}
+                          className={`h-full rounded-lg px-4 py-2 cursor-pointer border-l-4 transition-all hover:shadow-xl hover:scale-[1.01] ${getEventColors()}`}
                         >
-                          <div className={`font-medium ${event.status === 'completed' ? 'line-through' : ''}`}>
+                          <div className={`font-semibold text-sm ${event.status === 'completed' ? 'line-through opacity-60' : ''}`}>
                             {event.title}
                           </div>
-                          {height > 40 && (
-                            <>
-                              {event.time && <div className="text-xs opacity-75 mt-0.5">{event.time}</div>}
-                              {event.challengeName && (
-                                <div className="text-xs opacity-60 mt-0.5">{event.challengeName}</div>
-                              )}
-                            </>
+                          {height >= 50 && (
+                            <div className="flex items-center gap-3 mt-1 text-xs opacity-70">
+                              {event.time && <span>{event.time}{event.endTime && ` - ${event.endTime}`}</span>}
+                              {event.duration && <span>{event.duration} min</span>}
+                            </div>
+                          )}
+                          {height >= 70 && event.challengeName && (
+                            <div className="text-xs opacity-60 mt-1 flex items-center gap-2">
+                              <span className="px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{event.challengeName}</span>
+                              {event.day && <span>Day {event.day}</span>}
+                            </div>
+                          )}
+                          {height >= 90 && event.description && (
+                            <p className="text-xs opacity-50 mt-1 line-clamp-2">{event.description}</p>
                           )}
                         </div>
                       </div>
@@ -873,6 +909,8 @@ function ScheduleView({
                       className={`p-3 rounded-lg border-l-4 cursor-pointer transition-all hover:shadow-md ${
                         event.status === 'completed'
                           ? 'bg-green-500/5 border-green-500'
+                          : event.flexibility === 'fixed' || event.isFixed
+                          ? 'bg-red-500/5 border-red-400 shadow-sm'
                           : 'bg-oa-bg-secondary border-oa-accent shadow-sm'
                       }`}
                     >
@@ -893,13 +931,25 @@ function ScheduleView({
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className={`font-medium ${event.status === 'completed' ? 'line-through text-oa-text-secondary' : 'text-oa-text-primary'}`}>
-                            {event.title}
+                          <div className="flex items-center gap-2">
+                            <span className={`font-medium ${event.status === 'completed' ? 'line-through text-oa-text-secondary' : 'text-oa-text-primary'}`}>
+                              {event.title}
+                            </span>
+                            {(event.flexibility === 'fixed' || event.isFixed) && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-red-500/10 text-red-400 rounded">Fixed</span>
+                            )}
+                            {event.priority === 'high' && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-orange-500/10 text-orange-400 rounded">High</span>
+                            )}
                           </div>
+                          {event.description && (
+                            <p className="text-sm text-oa-text-secondary mt-1 line-clamp-2">{event.description}</p>
+                          )}
                           <div className="flex items-center gap-3 mt-1 text-sm text-oa-text-secondary">
-                            {event.time && <span>{event.time}</span>}
-                            {event.challengeName && <span>{event.challengeName}</span>}
+                            {event.time && <span>{event.time}{event.endTime && ` - ${event.endTime}`}</span>}
                             {event.duration && <span>{event.duration}m</span>}
+                            {event.challengeName && <span className="text-oa-accent">{event.challengeName}</span>}
+                            {event.day && <span>Day {event.day}</span>}
                           </div>
                         </div>
                       </div>

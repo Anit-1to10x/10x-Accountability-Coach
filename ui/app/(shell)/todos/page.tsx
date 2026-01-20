@@ -18,7 +18,10 @@ import {
   Trash2,
   Edit2,
   CheckCircle,
-  Flame
+  Flame,
+  Timer,
+  Shuffle,
+  FileText
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -97,6 +100,38 @@ function TodoDetailPanel({ todo, onClose, onToggle, onDelete }: TodoDetailProps)
 
         {/* Metadata */}
         <div className="space-y-4 mb-6">
+          {/* Duration */}
+          {todo.duration && (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <Timer className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <div className="text-xs text-oa-text-secondary">Duration</div>
+                <div className="text-sm font-medium text-oa-text-primary">{todo.duration} minutes</div>
+              </div>
+            </div>
+          )}
+
+          {/* Flexibility */}
+          {todo.flexibility && (
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                todo.flexibility === 'fixed' ? 'bg-red-500/10' : 'bg-green-500/10'
+              }`}>
+                <Shuffle className={`w-5 h-5 ${
+                  todo.flexibility === 'fixed' ? 'text-red-400' : 'text-green-400'
+                }`} />
+              </div>
+              <div>
+                <div className="text-xs text-oa-text-secondary">Scheduling</div>
+                <div className="text-sm font-medium text-oa-text-primary capitalize">
+                  {todo.flexibility === 'fixed' ? 'Fixed time - cannot be rescheduled' : 'Flexible - can be rescheduled'}
+                </div>
+              </div>
+            </div>
+          )}
+
           {todo.time && (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-oa-bg-secondary flex items-center justify-center">
@@ -109,39 +144,19 @@ function TodoDetailPanel({ todo, onClose, onToggle, onDelete }: TodoDetailProps)
             </div>
           )}
 
-          {todo.date && (
+          {(todo.date || todo.dueDate) && (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-oa-bg-secondary flex items-center justify-center">
                 <Calendar className="w-5 h-5 text-oa-accent" />
               </div>
               <div>
-                <div className="text-xs text-oa-text-secondary">Date</div>
+                <div className="text-xs text-oa-text-secondary">Due Date</div>
                 <div className="text-sm font-medium text-oa-text-primary">
-                  {new Date(todo.date).toLocaleDateString('en-US', {
+                  {new Date(todo.dueDate || todo.date).toLocaleDateString('en-US', {
                     weekday: 'long',
                     month: 'long',
                     day: 'numeric',
                     year: 'numeric'
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {todo.createdAt && (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-oa-bg-secondary flex items-center justify-center">
-                <Edit2 className="w-5 h-5 text-oa-text-secondary" />
-              </div>
-              <div>
-                <div className="text-xs text-oa-text-secondary">Created</div>
-                <div className="text-sm font-medium text-oa-text-primary">
-                  {new Date(todo.createdAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
                   })}
                 </div>
               </div>
@@ -167,7 +182,9 @@ function TodoDetailPanel({ todo, onClose, onToggle, onDelete }: TodoDetailProps)
               </div>
               <div>
                 <div className="text-xs text-oa-text-secondary">Day</div>
-                <div className="text-sm font-medium text-oa-text-primary">Day {todo.day}</div>
+                <div className="text-sm font-medium text-oa-text-primary">
+                  Day {todo.day}{todo.dayTitle ? ` - ${todo.dayTitle}` : ''}
+                </div>
               </div>
             </div>
           )}
@@ -247,7 +264,8 @@ export default function TodosPage() {
     try {
       const res = await fetch('/api/todos/from-challenges')
       const data = await res.json()
-      setChallengeTasks(data.events || [])
+      // API returns tasks with pre-calculated dueDates
+      setChallengeTasks(data.tasks || [])
     } catch (error) {
       console.error('Failed to load challenge tasks:', error)
     }
@@ -368,41 +386,47 @@ export default function TodosPage() {
     return combined
   }, [todos, challengeTasks])
 
+  // Helper to get date string for comparison (handles dueDate from challenges)
+  const getTodoDateStr = (t: any) => t.dueDate || t.date || t.createdAt
+
   const todayTodos = useMemo(() => {
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
     return allTodos.filter((t) => {
-      const todoDate = new Date(t.date || t.createdAt)
-      todoDate.setHours(0, 0, 0, 0)
-      return todoDate.getTime() === today.getTime()
+      const dateStr = getTodoDateStr(t)
+      if (!dateStr) return false
+      // Compare date strings directly for accuracy
+      return dateStr.startsWith(todayStr)
     })
   }, [allTodos, today])
 
   const yesterdayTodos = useMemo(() => {
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
     return allTodos.filter((t) => {
-      const todoDate = new Date(t.date || t.createdAt)
-      todoDate.setHours(0, 0, 0, 0)
-      return todoDate.getTime() === yesterday.getTime()
+      const dateStr = getTodoDateStr(t)
+      if (!dateStr) return false
+      return dateStr.startsWith(yesterdayStr)
     })
   }, [allTodos, yesterday])
 
   const upcomingTodos = useMemo(() => {
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
     return allTodos.filter((t) => {
-      const todoDate = new Date(t.date || t.createdAt)
-      todoDate.setHours(0, 0, 0, 0)
-      return todoDate.getTime() > today.getTime()
+      const dateStr = getTodoDateStr(t)
+      if (!dateStr) return false
+      return dateStr > todayStr
     }).sort((a, b) => {
-      const dateA = new Date(a.date || a.createdAt).getTime()
-      const dateB = new Date(b.date || b.createdAt).getTime()
-      return dateA - dateB
+      const dateA = getTodoDateStr(a) || ''
+      const dateB = getTodoDateStr(b) || ''
+      return dateA.localeCompare(dateB)
     })
   }, [allTodos, today])
 
   const earlierTodos = useMemo(() => {
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
     return allTodos.filter((t) => {
-      const todoDate = new Date(t.date || t.createdAt)
-      todoDate.setHours(0, 0, 0, 0)
-      return todoDate.getTime() < yesterday.getTime()
+      const dateStr = getTodoDateStr(t)
+      if (!dateStr) return false
+      return dateStr < yesterdayStr
     })
   }, [allTodos, yesterday])
 
@@ -462,15 +486,23 @@ export default function TodosPage() {
                 {todo.day && <span className="text-oa-text-secondary">Day {todo.day}</span>}
               </div>
             )}
-            {todo.time && (
-              <div className="flex items-center gap-1 text-xs text-oa-text-secondary mt-1">
-                <Clock className="w-3 h-3" />
-                {todo.time}
-              </div>
-            )}
+            <div className="flex items-center gap-3 mt-1">
+              {todo.duration && (
+                <div className="flex items-center gap-1 text-xs text-oa-text-secondary">
+                  <Timer className="w-3 h-3" />
+                  {todo.duration}m
+                </div>
+              )}
+              {todo.time && (
+                <div className="flex items-center gap-1 text-xs text-oa-text-secondary">
+                  <Clock className="w-3 h-3" />
+                  {todo.time}
+                </div>
+              )}
+            </div>
             {showDate && (
               <div className="text-xs text-oa-text-secondary mt-1">
-                {new Date(todo.date || todo.createdAt).toLocaleDateString()}
+                {new Date(todo.dueDate || todo.date || todo.createdAt).toLocaleDateString()}
               </div>
             )}
           </div>

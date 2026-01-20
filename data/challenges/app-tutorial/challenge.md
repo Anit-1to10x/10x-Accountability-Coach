@@ -4,8 +4,8 @@
 - **ID:** app-tutorial
 - **Type:** learning
 - **Status:** active
-- **Start Date:** 2026-01-01
-- **Target Date:** 2026-01-07
+- **Start Date:** 2026-01-20
+- **Target Date:** 2026-01-26
 - **Daily Hours:** 0.5
 - **Agent:** accountability-coach
 
