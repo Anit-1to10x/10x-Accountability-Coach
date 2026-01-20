@@ -1,18 +1,21 @@
-# Day 06 - Topic
+# Day 6 - Accountability Partners
 
 ## Status: pending
 
 ## Today's Focus
-Focus for day 06
+Find your tribe and set up accountability partnerships
 
 ## Tasks
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [ ] Identify 2-3 potential accountability partners in your network
+- [ ] Reach out to at least one person with a specific ask
+- [ ] Set up a weekly check-in schedule (day/time)
+- [ ] Define mutual accountability expectations and rules
+- [ ] Create a shared document to track both of your progress
 
 ## Key Learnings
-1. Learning point 1
-2. Learning point 2
+1. You're the average of the 5 people you spend most time with
+2. External accountability increases success by 95%
+3. Shared goals create stronger bonds
 
 ## Check-in
 - **Completed:** No

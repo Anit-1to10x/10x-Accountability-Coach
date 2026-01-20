@@ -1,18 +1,21 @@
-# Day 04 - Topic
+# Day 4 - Goal Setting Framework
 
 ## Status: pending
 
 ## Today's Focus
-Focus for day 04
+Master the SMART goal framework and set clear 30-day objectives
 
 ## Tasks
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [ ] Review SMART criteria (Specific, Measurable, Achievable, Relevant, Time-bound)
+- [ ] Write 3 SMART goals for this 30-day challenge
+- [ ] Break each goal into weekly milestones
+- [ ] Create a visual goal tracker
+- [ ] Share one goal with your AI coach for accountability
 
 ## Key Learnings
-1. Learning point 1
-2. Learning point 2
+1. Vague goals produce vague results
+2. What gets measured gets improved
+3. Written goals are 42% more likely to be achieved
 
 ## Check-in
 - **Completed:** No

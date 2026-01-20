@@ -1,18 +1,21 @@
-# Day 05 - Topic
+# Day 5 - Habit Stacking
 
 ## Status: pending
 
 ## Today's Focus
-Focus for day 05
+Link new habits to existing ones for effortless behavior change
 
 ## Tasks
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [ ] List 5 habits you already do daily without thinking
+- [ ] Identify 3 new habits you want to build this month
+- [ ] Create habit stacks: "After I [existing habit], I will [new habit]"
+- [ ] Write your habit stacks on sticky notes
+- [ ] Implement one habit stack today and track it
 
 ## Key Learnings
-1. Learning point 1
-2. Learning point 2
+1. Habit stacking uses existing neural pathways
+2. Context is the trigger for automatic behavior
+3. Small habits compound into massive change
 
 ## Check-in
 - **Completed:** No

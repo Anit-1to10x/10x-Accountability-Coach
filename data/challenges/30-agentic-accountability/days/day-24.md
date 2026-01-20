@@ -1,18 +1,21 @@
-# Day 24 - Topic
+# Day 24 - Time Blocking Mastery
 
 ## Status: pending
 
 ## Today's Focus
-Focus for day 24
+Protect your time and maximize deep work periods
 
 ## Tasks
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [ ] Identify your peak energy hours
+- [ ] Schedule your most important work during peak hours
+- [ ] Create time blocks for different types of work
+- [ ] Set up "Do Not Disturb" periods
+- [ ] Practice one full day of time blocking
 
 ## Key Learnings
-1. Learning point 1
-2. Learning point 2
+1. Time blocking is the antidote to constant interruption
+2. Deep work requires protected time
+3. Energy management is more important than time management
 
 ## Check-in
 - **Completed:** No

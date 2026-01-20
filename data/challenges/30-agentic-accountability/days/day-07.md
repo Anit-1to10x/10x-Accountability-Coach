@@ -1,18 +1,22 @@
-# Day 07 - Topic
+# Day 7 - Week 1 Review & Celebration
 
 ## Status: pending
 
 ## Today's Focus
-Focus for day 07
+Review your first week and celebrate your progress
 
 ## Tasks
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [ ] Review all Day 1-6 check-ins and notes
+- [ ] Calculate your task completion rate
+- [ ] Identify what worked best this week
+- [ ] Identify what needs improvement
+- [ ] Celebrate with a reward you chose at the start
+- [ ] Set intentions for Week 2
 
 ## Key Learnings
-1. Learning point 1
-2. Learning point 2
+1. Weekly reviews prevent drift from goals
+2. Celebration reinforces positive behavior
+3. 7 days of consistency creates real momentum
 
 ## Check-in
 - **Completed:** No

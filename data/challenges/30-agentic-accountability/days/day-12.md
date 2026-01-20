@@ -1,18 +1,21 @@
-# Day 12 - Topic
+# Day 12 - AI for Writing
 
 ## Status: pending
 
 ## Today's Focus
-Focus for day 12
+Master AI-assisted content creation and writing
 
 ## Tasks
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [ ] Experiment with different AI writing styles
+- [ ] Create content using AI as a brainstorming partner
+- [ ] Learn to edit and improve AI-generated drafts
+- [ ] Build your personal prompt library for writing tasks
+- [ ] Write a complete piece with AI assistance
 
 ## Key Learnings
-1. Learning point 1
-2. Learning point 2
+1. AI is a writing partner, not a replacement for your voice
+2. The best results come from iterating and refining
+3. Your unique perspective makes AI content valuable
 
 ## Check-in
 - **Completed:** No

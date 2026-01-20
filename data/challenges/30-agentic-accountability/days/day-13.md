@@ -1,18 +1,21 @@
-# Day 13 - Topic
+# Day 13 - AI for Coding & Building
 
 ## Status: pending
 
 ## Today's Focus
-Focus for day 13
+Learn to build faster with AI coding assistance
 
 ## Tasks
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [ ] Practice using AI to write code snippets
+- [ ] Learn to debug code with AI assistance
+- [ ] Create a simple automation script with AI help
+- [ ] Understand how to review and improve AI-generated code
+- [ ] Build something small but functional today
 
 ## Key Learnings
-1. Learning point 1
-2. Learning point 2
+1. AI can accelerate coding 10x when used correctly
+2. Always review AI code for security and efficiency
+3. Explaining your intent clearly leads to better code
 
 ## Check-in
 - **Completed:** No

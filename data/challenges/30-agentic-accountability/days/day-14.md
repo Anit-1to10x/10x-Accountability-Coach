@@ -1,18 +1,21 @@
-# Day 14 - Topic
+# Day 14 - Week 2 Review & AI Portfolio
 
 ## Status: pending
 
 ## Today's Focus
-Focus for day 14
+Review your AI learning journey and build your portfolio
 
 ## Tasks
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [ ] Review all AI tools and techniques learned this week
+- [ ] Create a personal AI toolkit document
+- [ ] Save your best prompts to a prompt library
+- [ ] Document your most successful AI workflows
+- [ ] Celebrate completing the AI Mastery module!
 
 ## Key Learnings
-1. Learning point 1
-2. Learning point 2
+1. The best tool is the one you'll actually use consistently
+2. Your prompt library is a valuable personal asset
+3. AI mastery is about knowing when and how to use tools
 
 ## Check-in
 - **Completed:** No

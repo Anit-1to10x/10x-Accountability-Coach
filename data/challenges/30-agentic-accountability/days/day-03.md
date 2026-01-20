@@ -1,18 +1,21 @@
-# Day 03 - Topic
+# Day 3 - Evening Reflection Practice
 
 ## Status: pending
 
 ## Today's Focus
-Focus for day 03
+Build the habit of daily reflection to accelerate learning and growth
 
 ## Tasks
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [ ] Set a 15-minute evening reflection time (same time each day)
+- [ ] Answer: What went well today? List 3 wins
+- [ ] Answer: What could be improved? Be specific
+- [ ] Write 3 things you're grateful for
+- [ ] Plan your top 3 priorities for tomorrow
 
 ## Key Learnings
-1. Learning point 1
-2. Learning point 2
+1. Reflection turns experience into wisdom
+2. Gratitude rewires your brain for positivity
+3. Daily reviews compound into massive growth
 
 ## Check-in
 - **Completed:** No

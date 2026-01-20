@@ -1,18 +1,21 @@
-# Day 25 - Topic
+# Day 25 - Energy Management
 
 ## Status: pending
 
 ## Today's Focus
-Focus for day 25
+Work with your natural rhythm for sustainable productivity
 
 ## Tasks
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [ ] Track your energy levels throughout the day
+- [ ] Identify energy drains and energy boosters
+- [ ] Match tasks to energy levels (creative work when fresh)
+- [ ] Design recovery rituals for energy renewal
+- [ ] Create your ideal energy schedule
 
 ## Key Learnings
-1. Learning point 1
-2. Learning point 2
+1. Energy is a renewable resource when managed well
+2. Rest is productive when done intentionally
+3. Your body has a natural rhythm - work with it
 
 ## Check-in
 - **Completed:** No

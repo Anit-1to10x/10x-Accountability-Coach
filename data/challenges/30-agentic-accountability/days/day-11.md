@@ -1,18 +1,21 @@
-# Day 11 - Topic
+# Day 11 - AI for Research
 
 ## Status: pending
 
 ## Today's Focus
-Focus for day 11
+10x your learning speed using AI research techniques
 
 ## Tasks
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [ ] Learn to use AI for summarizing long articles/papers
+- [ ] Practice extracting key insights from complex documents
+- [ ] Create a research prompt template library
+- [ ] Use AI to find connections between different topics
+- [ ] Build a knowledge base from your AI research sessions
 
 ## Key Learnings
-1. Learning point 1
-2. Learning point 2
+1. AI can process information 100x faster than manual reading
+2. Ask follow-up questions to go deeper
+3. Always verify AI-generated facts with primary sources
 
 ## Check-in
 - **Completed:** No
