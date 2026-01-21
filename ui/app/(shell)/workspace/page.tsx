@@ -4,8 +4,9 @@ import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Folder, FolderOpen, FileText, Image, FileJson, File,
-  ChevronRight, ChevronDown, RefreshCw, Home, Zap,
-  MessageSquare, Target, Calendar, CheckSquare, Loader2
+  ChevronRight, ChevronDown, RefreshCw, Zap, Database,
+  MessageSquare, Target, Calendar, CheckSquare, Loader2,
+  User, LayoutGrid, Activity, Cog
 } from 'lucide-react'
 import { FileViewer } from '@/components/agent/FileViewer'
 
@@ -211,6 +212,7 @@ export default function WorkspacePage() {
   const [loading, setLoading] = useState(true)
   const [selectedItem, setSelectedItem] = useState<FileItem | null>(null)
   const [showFileViewer, setShowFileViewer] = useState(false)
+  const [activeTab, setActiveTab] = useState<'files' | 'stats'>('files')
   const [fileViewer, setFileViewer] = useState<FileViewerState>({
     content: null,
     path: null,
@@ -377,48 +379,81 @@ export default function WorkspacePage() {
       <div className="px-8 py-6 border-b border-oa-border">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
-            <Home className="w-6 h-6 text-oa-accent" />
+            <Database className="w-6 h-6 text-oa-accent" />
             <h1 className="text-2xl font-semibold text-oa-text-primary">
               Workspace
             </h1>
           </div>
-          <button
-            onClick={loadWorkspace}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-oa-text-secondary hover:text-oa-text-primary hover:bg-oa-bg-secondary rounded-lg transition-colors"
-          >
-            <RefreshCw size={14} />
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Tab Switcher */}
+            <div className="flex bg-oa-bg-secondary rounded-lg p-1">
+              <button
+                onClick={() => setActiveTab('files')}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  activeTab === 'files'
+                    ? 'bg-oa-accent text-white'
+                    : 'text-oa-text-secondary hover:text-oa-text-primary'
+                }`}
+              >
+                Files
+              </button>
+              <button
+                onClick={() => setActiveTab('stats')}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  activeTab === 'stats'
+                    ? 'bg-oa-accent text-white'
+                    : 'text-oa-text-secondary hover:text-oa-text-primary'
+                }`}
+              >
+                Stats
+              </button>
+            </div>
+            <button
+              onClick={loadWorkspace}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm text-oa-text-secondary hover:text-oa-text-primary hover:bg-oa-bg-secondary rounded-lg transition-colors"
+            >
+              <RefreshCw size={14} />
+              Refresh
+            </button>
+          </div>
         </div>
-        <p className="text-sm text-oa-text-secondary">
-          Browse your data folder structure - {folders} folders, {files} files
+        <div className="flex items-center gap-4 text-sm text-oa-text-secondary">
+          <span className="flex items-center gap-1">
+            <Folder size={14} />
+            Local Files
+          </span>
+          <span>
+            {folders} folders • {files} files
+          </span>
           {selectedItem?.type === 'file' && (
-            <span className="ml-2 text-oa-accent">
+            <span className="text-oa-accent">
               • Viewing: {selectedItem.name}
             </span>
           )}
-        </p>
+        </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden flex">
-        {/* File Tree */}
-        <div className="w-1/3 min-w-[250px] max-w-[400px] border-r border-oa-border overflow-y-auto p-4">
-          <div className="text-xs font-semibold text-oa-text-secondary uppercase tracking-wider mb-3 px-2">
-            Data Folder
-          </div>
-          <div className="space-y-0.5">
-            {contents.map((item) => (
-              <TreeItem
-                key={item.path}
-                item={item}
-                onSelect={handleSelect}
-                onDoubleClick={handleOpenFile}
-                selectedPath={selectedItem?.path}
-              />
-            ))}
-          </div>
-        </div>
+        {activeTab === 'files' ? (
+          <>
+            {/* File Tree */}
+            <div className="w-1/3 min-w-[250px] max-w-[400px] border-r border-oa-border overflow-y-auto p-4">
+              <div className="text-xs font-semibold text-oa-text-secondary uppercase tracking-wider mb-3 px-2">
+                Data Folder
+              </div>
+              <div className="space-y-0.5">
+                {contents.map((item) => (
+                  <TreeItem
+                    key={item.path}
+                    item={item}
+                    onSelect={handleSelect}
+                    onDoubleClick={handleOpenFile}
+                    selectedPath={selectedItem?.path}
+                  />
+                ))}
+              </div>
+            </div>
 
         {/* Preview/Details Panel */}
         <div className="flex-1 overflow-hidden flex flex-col">
@@ -557,6 +592,100 @@ export default function WorkspacePage() {
             </div>
           )}
         </div>
+          </>
+        ) : (
+          /* Stats View */
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Folder Statistics Grid */}
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Database className="w-5 h-5 text-oa-accent" />
+                <h3 className="font-medium text-oa-text-primary">Folder Statistics</h3>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {contents.filter(item => item.type === 'folder').map((folder) => {
+                  const Icon = getIcon(folder)
+                  const color = getFolderColor(folder.name)
+                  const childCount = folder.children?.length || 0
+                  return (
+                    <div
+                      key={folder.path}
+                      className="bg-oa-bg-secondary rounded-lg p-4 border border-oa-border hover:border-oa-accent/50 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setSelectedItem(folder)
+                        setActiveTab('files')
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon size={18} className={color} />
+                        <span className="text-sm font-medium text-oa-text-primary truncate">
+                          {folder.name}
+                        </span>
+                      </div>
+                      <p className="text-2xl font-semibold text-oa-text-primary">
+                        {childCount}
+                      </p>
+                      <p className="text-xs text-oa-text-secondary">items</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="bg-oa-bg-secondary rounded-lg p-6 border border-oa-border">
+              <h3 className="font-medium text-oa-text-primary mb-4">Workspace Summary</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-oa-text-secondary">Total Folders</p>
+                  <p className="text-xl font-semibold text-oa-text-primary">{folders}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-oa-text-secondary">Total Files</p>
+                  <p className="text-xl font-semibold text-oa-text-primary">{files}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-oa-text-secondary">Data Source</p>
+                  <p className="text-xl font-semibold text-oa-text-primary">Local</p>
+                </div>
+                <div>
+                  <p className="text-sm text-oa-text-secondary">Storage Location</p>
+                  <p className="text-sm font-medium text-oa-accent">/data/</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Access */}
+            <div className="mt-8">
+              <h3 className="font-medium text-oa-text-primary mb-4">Quick Access</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { name: 'challenges', label: 'Challenges', icon: Target, color: 'text-orange-500' },
+                  { name: 'todos', label: 'Todos', icon: CheckSquare, color: 'text-green-500' },
+                  { name: 'skills', label: 'Skills', icon: Zap, color: 'text-yellow-500' },
+                  { name: 'prompts', label: 'Prompts', icon: MessageSquare, color: 'text-blue-500' },
+                ].map((item) => {
+                  const folder = contents.find(c => c.name === item.name)
+                  return (
+                    <button
+                      key={item.name}
+                      onClick={() => {
+                        if (folder) {
+                          setSelectedItem(folder)
+                          setActiveTab('files')
+                        }
+                      }}
+                      className="flex items-center gap-3 p-3 bg-oa-bg-secondary rounded-lg border border-oa-border hover:border-oa-accent/50 transition-colors"
+                    >
+                      <item.icon size={20} className={item.color} />
+                      <span className="text-sm text-oa-text-primary">{item.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

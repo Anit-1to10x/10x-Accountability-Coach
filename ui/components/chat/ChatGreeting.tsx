@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useAgentStore } from '@/lib/store'
+import { useAgentStore, useChatStore } from '@/lib/store'
 import type { Agent } from '@/types'
 
 interface ChatGreetingProps {
@@ -9,23 +9,49 @@ interface ChatGreetingProps {
   selectedAgents?: Agent[]
 }
 
-// Agent color map for badges
-const agentColors: Record<string, string> = {
-  purple: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-  blue: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-  green: 'bg-green-500/20 text-green-300 border-green-500/30',
-  orange: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
-  pink: 'bg-pink-500/20 text-pink-300 border-pink-500/30',
-  cyan: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
-  default: 'bg-oa-accent/20 text-oa-accent border-oa-accent/30',
+// Animated sun/asterisk icon similar to Claude
+function AnimatedSunIcon({ isAnimating = false }: { isAnimating?: boolean }) {
+  return (
+    <div className={`relative ${isAnimating ? 'animate-pulse' : ''}`}>
+      <svg
+        width="48"
+        height="48"
+        viewBox="0 0 48 48"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={`${isAnimating ? 'animate-spin-slow' : ''}`}
+        style={{ animationDuration: '8s' }}
+      >
+        {/* Sun rays */}
+        {[...Array(12)].map((_, i) => (
+          <line
+            key={i}
+            x1="24"
+            y1="4"
+            x2="24"
+            y2="12"
+            stroke="#D97706"
+            strokeWidth="2"
+            strokeLinecap="round"
+            transform={`rotate(${i * 30} 24 24)`}
+            className={isAnimating ? 'opacity-80' : 'opacity-100'}
+          />
+        ))}
+        {/* Center circle */}
+        <circle cx="24" cy="24" r="8" fill="#D97706" />
+      </svg>
+    </div>
+  )
 }
 
 export function ChatGreeting({ agentName, selectedAgents: propSelectedAgents }: ChatGreetingProps) {
   const [userName, setUserName] = useState<string>('')
   const { getSelectedAgents } = useAgentStore()
+  const { isTyping, streamingPhase } = useChatStore()
 
   // Use prop if provided, otherwise get from store
   const selectedAgents = propSelectedAgents || getSelectedAgents()
+  const isThinking = isTyping || streamingPhase !== 'idle'
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -39,76 +65,56 @@ export function ChatGreeting({ agentName, selectedAgents: propSelectedAgents }: 
         }
       } catch (error) {
         console.error('Failed to load user profile:', error)
-        setUserName('') // No fallback - will show 'there'
+        setUserName('')
       }
     }
     loadUserProfile()
   }, [])
 
-  const getSubtitle = () => {
-    if (agentName) {
-      return `Your personal ${agentName}`
+  // Get display text based on state
+  const getDisplayText = () => {
+    const name = userName || 'there'
+    if (isThinking) {
+      return (
+        <>
+          <span className="text-oa-text-primary">{name}</span>
+          <span className="text-oa-text-secondary"> is thinking</span>
+        </>
+      )
     }
-    if (selectedAgents.length > 0) {
-      const capabilities = selectedAgents.flatMap(a => a.capabilities || [])
-      const uniqueCapabilities = [...new Set(capabilities)]
-      return `Your personal accountability partner with ${uniqueCapabilities.length} capabilities`
-    }
-    return 'Connect agents from the sidebar to get started'
+    return (
+      <>
+        <span className="text-oa-text-primary">Hi, {name}</span>
+      </>
+    )
   }
 
   return (
-    <div className="text-center mb-8">
-      <h1 className="text-5xl font-light italic text-oa-text-primary mb-2">
-        {userName ? `Hey, ${userName}` : 'Welcome to 10X Coach'}
+    <div className="flex flex-col items-center justify-center py-12">
+      {/* Animated Sun Icon */}
+      <div className="mb-6">
+        <AnimatedSunIcon isAnimating={isThinking} />
+      </div>
+
+      {/* Main Greeting Text - Claude style */}
+      <h1 className="text-4xl md:text-5xl font-light tracking-tight text-center mb-4">
+        {getDisplayText()}
       </h1>
-      <p className="text-sm text-oa-text-secondary">
-        {getSubtitle()}
-      </p>
 
-      {/* Connected Agents Display */}
-      {selectedAgents.length > 0 && (
-        <div className="mt-6">
-          <p className="text-xs text-oa-text-secondary mb-3">Connected Agents</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {selectedAgents.map((agent) => {
-              const colorClass = agentColors[agent.color || 'default']
-              return (
-                <div
-                  key={agent.id}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs ${colorClass}`}
-                >
-                  <span>{agent.icon || '🤖'}</span>
-                  <span className="font-medium">{agent.name}</span>
-                </div>
-              )
-            })}
-          </div>
+      {/* Thinking dots animation */}
+      {isThinking && (
+        <div className="flex items-center gap-1 mt-2">
+          <span className="w-2 h-2 bg-amber-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <span className="w-2 h-2 bg-amber-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <span className="w-2 h-2 bg-amber-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
         </div>
       )}
 
-      {/* Accountability Coach Indicator */}
-      {!agentName && selectedAgents.length > 0 && (
-        <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-oa-bg-secondary border border-oa-border rounded-full text-xs">
+      {/* Connected agents indicator - minimal style */}
+      {selectedAgents.length > 0 && !isThinking && (
+        <div className="mt-6 flex items-center gap-2 text-sm text-oa-text-secondary">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-oa-text-primary">
-            Accountability Coach - {selectedAgents.length} agent{selectedAgents.length > 1 ? 's' : ''} connected
-          </span>
-        </div>
-      )}
-
-      {/* Single Agent Mode */}
-      {agentName && (
-        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-oa-bg-secondary border border-oa-border rounded-full text-xs">
-          <div className="w-2 h-2 bg-oa-accent rounded-full"></div>
-          <span className="text-oa-text-primary">{agentName} Mode</span>
-        </div>
-      )}
-
-      {/* No agents selected */}
-      {selectedAgents.length === 0 && !agentName && (
-        <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/30 rounded-full text-xs text-orange-300">
-          <span>No agents selected - click agents in sidebar to enable</span>
+          <span>{selectedAgents.length} agent{selectedAgents.length > 1 ? 's' : ''} connected</span>
         </div>
       )}
     </div>

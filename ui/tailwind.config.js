@@ -33,6 +33,7 @@ module.exports = {
       animation: {
         'fade-in': 'fadeIn 0.2s ease-out',
         'typing': 'typing 1.4s ease-in-out infinite',
+        'spin-slow': 'spin 8s linear infinite',
       },
       keyframes: {
         fadeIn: {
