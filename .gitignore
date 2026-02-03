@@ -49,9 +49,14 @@ data/.registry/
 data/.responses/
 data/.cache-index.json
 
-# Claude Code local settings
+# Claude Code local settings (contains secrets)
+.claude/
 .claude/settings.local.json
 .claude/projects/
+.claude/mcp.json
+
+# MCP config with secrets
+data/mcp-config.json
 
 # Logs
 npm-debug.log*
