@@ -14,11 +14,16 @@
  *   const source = await getActiveDataSource() // 'mcp' | 'supabase' | 'local'
  */
 
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
+
 // Data source types
 export type DataSourceType = 'local' | 'supabase' | 'mcp'
 
 // Settings file to persist user preferences
 let cachedSettings: DataSourceSettings | null = null
+
+// Supabase client singleton
+let supabaseClient: SupabaseClient | null = null
 
 export interface DataSourceSettings {
   supabaseEnabled: boolean
@@ -49,11 +54,14 @@ export function getDataSource(): DataSourceType {
  * Check if Supabase is properly configured in environment
  */
 export function isSupabaseConfigured(): boolean {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
   return !!(
-    process.env.SUPABASE_URL &&
-    process.env.SUPABASE_URL !== 'https://your-project.supabase.co' &&
-    process.env.SUPABASE_ANON_KEY &&
-    process.env.SUPABASE_ANON_KEY !== 'your-anon-key-here'
+    url &&
+    url !== 'https://your-project.supabase.co' &&
+    key &&
+    key !== 'your-anon-key-here'
   )
 }
 
@@ -179,7 +187,7 @@ export function getDataSourceStatus(): DataSourceStatus {
       supabase: settings.supabaseEnabled,
       mcp: settings.mcpEnabled,
     },
-    supabaseUrl: process.env.SUPABASE_URL,
+    supabaseUrl: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
     mcpUrl: process.env.MCP_SERVER_URL,
     localPath: process.env.OPENANALYST_DIR || './data',
     message: messages[current],
@@ -187,27 +195,48 @@ export function getDataSourceStatus(): DataSourceStatus {
 }
 
 /**
- * SUPABASE CLIENT (Prepared but requires @supabase/supabase-js)
- *
- * To enable Supabase:
- * 1. Install: npm install @supabase/supabase-js
- * 2. Uncomment the code below
- * 3. Set DATA_SOURCE=supabase in .env.local
- * 4. Configure SUPABASE_URL and SUPABASE_ANON_KEY
+ * Get Supabase client (singleton)
  */
+export function getSupabaseClient(): SupabaseClient | null {
+  if (!isSupabaseConfigured()) {
+    return null
+  }
 
-/*
-import { createClient } from '@supabase/supabase-js'
+  if (supabaseClient) {
+    return supabaseClient
+  }
 
-const supabaseUrl = process.env.SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_ANON_KEY!
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+  if (!supabaseUrl || !supabaseKey) {
+    return null
+  }
 
-// Supabase data operations
+  try {
+    supabaseClient = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    })
+    return supabaseClient
+  } catch (error) {
+    console.error('Failed to create Supabase client:', error)
+    return null
+  }
+}
+
+/**
+ * Supabase data operations
+ * These are used when DATA_SOURCE=supabase is set
+ */
 export const supabaseOperations = {
   profiles: {
     async list() {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -216,6 +245,9 @@ export const supabaseOperations = {
       return data
     },
     async get(id: string) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -225,6 +257,9 @@ export const supabaseOperations = {
       return data
     },
     async create(profile: any) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
         .from('profiles')
         .insert(profile)
@@ -234,6 +269,9 @@ export const supabaseOperations = {
       return data
     },
     async update(id: string, updates: any) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
@@ -244,6 +282,9 @@ export const supabaseOperations = {
       return data
     },
     async delete(id: string) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { error } = await supabase
         .from('profiles')
         .delete()
@@ -252,15 +293,27 @@ export const supabaseOperations = {
     }
   },
   challenges: {
-    async list() {
-      const { data, error } = await supabase
+    async list(profileId?: string) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
+      let query = supabase
         .from('challenges')
         .select('*')
         .order('created_at', { ascending: false })
+
+      if (profileId) {
+        query = query.eq('profile_id', profileId)
+      }
+
+      const { data, error } = await query
       if (error) throw error
       return data
     },
     async get(id: string) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
         .from('challenges')
         .select('*')
@@ -270,6 +323,9 @@ export const supabaseOperations = {
       return data
     },
     async create(challenge: any) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
         .from('challenges')
         .insert(challenge)
@@ -279,6 +335,9 @@ export const supabaseOperations = {
       return data
     },
     async update(id: string, updates: any) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
         .from('challenges')
         .update(updates)
@@ -287,10 +346,23 @@ export const supabaseOperations = {
         .single()
       if (error) throw error
       return data
+    },
+    async delete(id: string) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
+      const { error } = await supabase
+        .from('challenges')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
     }
   },
   todos: {
     async list(profileId?: string) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       let query = supabase
         .from('todos')
         .select('*')
@@ -302,7 +374,22 @@ export const supabaseOperations = {
       if (error) throw error
       return data
     },
+    async get(id: string) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
+      const { data, error } = await supabase
+        .from('todos')
+        .select('*')
+        .eq('id', id)
+        .single()
+      if (error) throw error
+      return data
+    },
     async create(todo: any) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
         .from('todos')
         .insert(todo)
@@ -312,6 +399,9 @@ export const supabaseOperations = {
       return data
     },
     async update(id: string, updates: any) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
         .from('todos')
         .update(updates)
@@ -322,6 +412,9 @@ export const supabaseOperations = {
       return data
     },
     async delete(id: string) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { error } = await supabase
         .from('todos')
         .delete()
@@ -329,85 +422,73 @@ export const supabaseOperations = {
       if (error) throw error
     }
   },
-  agents: {
-    async list() {
-      const { data, error } = await supabase
-        .from('agents')
+  checkins: {
+    async list(profileId?: string, challengeId?: string) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
+      let query = supabase
+        .from('checkins')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('date', { ascending: false })
+
+      if (profileId) {
+        query = query.eq('profile_id', profileId)
+      }
+      if (challengeId) {
+        query = query.eq('challenge_id', challengeId)
+      }
+
+      const { data, error } = await query
       if (error) throw error
       return data
     },
-    async get(id: string) {
+    async create(checkin: any) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
-        .from('agents')
-        .select('*')
-        .eq('id', id)
-        .single()
-      if (error) throw error
-      return data
-    },
-    async create(agent: any) {
-      const { data, error } = await supabase
-        .from('agents')
-        .insert(agent)
+        .from('checkins')
+        .insert(checkin)
         .select()
         .single()
       if (error) throw error
       return data
     },
-    async update(id: string, updates: any) {
+    async getByDate(challengeId: string, date: string) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
-        .from('agents')
-        .update(updates)
-        .eq('id', id)
-        .select()
+        .from('checkins')
+        .select('*')
+        .eq('challenge_id', challengeId)
+        .eq('date', date)
         .single()
-      if (error) throw error
+      if (error && error.code !== 'PGRST116') throw error // PGRST116 = no rows
       return data
     }
   },
-  skills: {
-    async list() {
+  activities: {
+    async list(profileId: string, limit = 50) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
-        .from('skills')
+        .from('activities')
         .select('*')
-        .order('name', { ascending: true })
-      if (error) throw error
-      return data
-    },
-    async get(id: string) {
-      const { data, error } = await supabase
-        .from('skills')
-        .select('*')
-        .eq('id', id)
-        .single()
-      if (error) throw error
-      return data
-    },
-    async create(skill: any) {
-      const { data, error } = await supabase
-        .from('skills')
-        .insert(skill)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    }
-  },
-  activityLog: {
-    async list(limit = 50) {
-      const { data, error } = await supabase
-        .from('activity_log')
-        .select('*')
+        .eq('profile_id', profileId)
         .order('created_at', { ascending: false })
         .limit(limit)
       if (error) throw error
       return data
     },
     async create(activity: any) {
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not configured')
+
       const { data, error } = await supabase
-        .from('activity_log')
+        .from('activities')
         .insert(activity)
         .select()
         .single()
@@ -416,7 +497,3 @@ export const supabaseOperations = {
     }
   }
 }
-*/
-
-// Export placeholder for when Supabase is not configured
-export const supabaseOperations = null

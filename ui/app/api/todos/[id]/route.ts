@@ -3,16 +3,64 @@ import fs from 'fs/promises'
 import path from 'path'
 import { PATHS, getProfilePaths } from '@/lib/paths'
 
-const TODOS_FILE = path.join(PATHS.todos, 'active.json')
-
 interface Todo {
   id: string
   title: string
   completed: boolean
+  status: 'pending' | 'completed'
   challengeId?: string
+  challengeName?: string
   date?: string
+  dueDate?: string
   priority?: 'low' | 'medium' | 'high'
   createdAt: string
+}
+
+// Parse todos from MD file
+function parseTodosMd(content: string): Todo[] {
+  const todos: Todo[] = []
+  const today = new Date().toISOString().split('T')[0]
+  const lines = content.split('\n').map(l => l.replace(/\r$/, ''))
+
+  let currentDate: string | null = today
+  let currentChallenge = ''
+
+  for (const line of lines) {
+    // Check for date sections
+    const dateSectionMatch = line.match(/^##\s+Today\s*\((\d{4}-\d{2}-\d{2})\)/i)
+    if (dateSectionMatch) {
+      currentDate = dateSectionMatch[1]
+      continue
+    }
+
+    // Track section headers
+    const sectionMatch = line.match(/^###\s+(.+)/)
+    if (sectionMatch) {
+      currentChallenge = sectionMatch[1].trim()
+      continue
+    }
+
+    // Match todo items
+    const todoMatch = line.match(/^-\s*\[([ xX])\]\s*(?:\*\*)?(.+?)(?:\*\*)?$/)
+    if (todoMatch) {
+      const completed = todoMatch[1].toLowerCase() === 'x'
+      const title = todoMatch[2].trim()
+
+      todos.push({
+        id: `todo-${todos.length + 1}`,
+        title,
+        status: completed ? 'completed' : 'pending',
+        completed,
+        priority: 'medium',
+        createdAt: new Date().toISOString(),
+        challengeName: currentChallenge || null,
+        dueDate: currentDate,
+        date: currentDate,
+      } as Todo)
+    }
+  }
+
+  return todos
 }
 
 // GET: Read specific todo
@@ -21,19 +69,45 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const content = await fs.readFile(TODOS_FILE, 'utf-8')
-    const todos: Todo[] = JSON.parse(content)
-    const todo = todos.find((t) => t.id === params.id)
+    // Get profile ID from query or header
+    const { searchParams } = new URL(request.url)
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+    const todosDir = profileId ? getProfilePaths(profileId).todos : PATHS.todos
 
-    if (!todo) {
-      return NextResponse.json(
-        { error: 'Todo not found' },
-        { status: 404 }
-      )
+    // Try MD file first
+    const mdFile = path.join(todosDir, 'active.md')
+    try {
+      const mdContent = await fs.readFile(mdFile, 'utf-8')
+      const todos = parseTodosMd(mdContent)
+      const todo = todos.find((t) => t.id === params.id)
+
+      if (todo) {
+        return NextResponse.json({ todo })
+      }
+    } catch {
+      // MD file doesn't exist, try JSON
     }
 
-    return NextResponse.json({ todo })
+    // Fall back to JSON
+    const jsonFile = path.join(todosDir, 'active.json')
+    try {
+      const content = await fs.readFile(jsonFile, 'utf-8')
+      const todos: Todo[] = JSON.parse(content)
+      const todo = todos.find((t) => t.id === params.id)
+
+      if (todo) {
+        return NextResponse.json({ todo })
+      }
+    } catch {
+      // JSON file doesn't exist either
+    }
+
+    return NextResponse.json(
+      { error: 'Todo not found' },
+      { status: 404 }
+    )
   } catch (error) {
+    console.error('Failed to load todo:', error)
     return NextResponse.json(
       { error: 'Failed to load todo' },
       { status: 500 }
@@ -58,6 +132,7 @@ export async function PATCH(
     // Read existing todos from MD file (MD is the only source of truth)
     const mdFile = path.join(todosDir, 'active.md')
     let usingMdFile = false
+    let updatedTodo: Partial<Todo> = { id: params.id }
 
     try {
       const mdContent = await fs.readFile(mdFile, 'utf-8')
@@ -99,9 +174,15 @@ export async function PATCH(
 
               // Update the checkbox
               const checkbox = completed ? '[x]' : '[ ]'
-              const taskText = todoMatch[2]
+              const taskText = title || todoMatch[2]
               updatedLines.push(`- ${checkbox} ${taskText}`)
               usingMdFile = true
+              updatedTodo = {
+                ...updatedTodo,
+                completed,
+                status: completed ? 'completed' : 'pending',
+                title: taskText
+              }
             } else {
               updatedLines.push(line)
             }
@@ -114,20 +195,35 @@ export async function PATCH(
       }
 
       if (usingMdFile) {
+        // Ensure directory exists
+        await fs.mkdir(todosDir, { recursive: true })
         // Write updated MD file
         await fs.writeFile(mdFile, updatedLines.join('\n'))
       }
     } catch (mdError) {
-      // MD file doesn't exist or failed to parse, fall back to JSON
+      // MD file doesn't exist or failed to parse
       usingMdFile = false
     }
 
-    // MD file is the only source of truth
+    // If MD file wasn't used, try creating it with the todo
     if (!usingMdFile) {
-      return NextResponse.json(
-        { error: 'Todo not found' },
-        { status: 404 }
-      )
+      // Create a new MD file with default structure
+      try {
+        await fs.mkdir(todosDir, { recursive: true })
+        const today = new Date().toISOString().split('T')[0]
+        const defaultContent = `# Tasks\n\n## Today (${today})\n\n### General Tasks\n- [ ] New task\n`
+        await fs.writeFile(mdFile, defaultContent)
+
+        return NextResponse.json(
+          { error: 'Todo not found. Created new todo file.' },
+          { status: 404 }
+        )
+      } catch {
+        return NextResponse.json(
+          { error: 'Todo not found' },
+          { status: 404 }
+        )
+      }
     }
 
     // Update index.md
@@ -150,7 +246,7 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      todo: { id: params.id, completed, title, date, priority },
+      todo: { ...updatedTodo, date, priority },
     })
   } catch (error: any) {
     console.error('Failed to update todo:', error)
@@ -161,38 +257,65 @@ export async function PATCH(
   }
 }
 
-// DELETE: Remove todo
+// DELETE: Remove todo from MD file
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Read existing todos
-    let todos: Todo[] = []
+    // Get profile ID from query or header
+    const { searchParams } = new URL(request.url)
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+    const todosDir = profileId ? getProfilePaths(profileId).todos : PATHS.todos
+
+    const mdFile = path.join(todosDir, 'active.md')
+    let deletedTodo: Todo | null = null
+
     try {
-      const content = await fs.readFile(TODOS_FILE, 'utf-8')
-      todos = JSON.parse(content)
+      const mdContent = await fs.readFile(mdFile, 'utf-8')
+      const lines = mdContent.split('\n')
+
+      let todoCounter = 0
+      const updatedLines: string[] = []
+
+      for (const line of lines) {
+        // Match todo items
+        const todoMatch = line.match(/^-\s*\[([ xX])\]\s*(.+)$/)
+        if (todoMatch) {
+          todoCounter++
+          const todoId = `todo-${todoCounter}`
+
+          // Skip this todo (delete it)
+          if (todoId === params.id) {
+            deletedTodo = {
+              id: todoId,
+              title: todoMatch[2].trim(),
+              completed: todoMatch[1].toLowerCase() === 'x',
+              status: todoMatch[1].toLowerCase() === 'x' ? 'completed' : 'pending',
+              createdAt: new Date().toISOString(),
+            }
+            continue // Skip this line (delete the todo)
+          }
+        }
+        updatedLines.push(line)
+      }
+
+      if (!deletedTodo) {
+        return NextResponse.json(
+          { error: 'Todo not found' },
+          { status: 404 }
+        )
+      }
+
+      // Write updated MD file
+      await fs.writeFile(mdFile, updatedLines.join('\n'))
+
     } catch {
       return NextResponse.json(
-        { error: 'Todos file not found' },
+        { error: 'Todo file not found' },
         { status: 404 }
       )
     }
-
-    // Find todo
-    const todoIndex = todos.findIndex((t) => t.id === params.id)
-    if (todoIndex === -1) {
-      return NextResponse.json(
-        { error: 'Todo not found' },
-        { status: 404 }
-      )
-    }
-
-    // Remove todo
-    const deletedTodo = todos.splice(todoIndex, 1)[0]
-
-    // Save updated todos
-    await fs.writeFile(TODOS_FILE, JSON.stringify(todos, null, 2))
 
     // Update index.md
     try {
@@ -203,7 +326,7 @@ export async function DELETE(
           action: 'todo_deleted',
           data: {
             todoId: params.id,
-            title: deletedTodo.title,
+            title: deletedTodo?.title,
             date: new Date().toISOString(),
           },
         }),

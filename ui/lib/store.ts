@@ -147,6 +147,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 export type StreamingPhase =
   | 'idle'
   | 'thinking'
+  | 'rag_retrieving'
+  | 'mcp_connected'
   | 'matching_skill'
   | 'matching_prompt'
   | 'loading_tools'
@@ -174,9 +176,13 @@ interface ChatState {
     promptName?: string
     files?: StreamingFileInfo[]
     message?: string
+    documentsFound?: number
+    sources?: string[]
+    servers?: string[]
+    toolCount?: number
   }
   setTyping: (isTyping: boolean) => void
-  setStreamingPhase: (phase: StreamingPhase, details?: { toolName?: string; skillName?: string; promptName?: string; files?: StreamingFileInfo[]; message?: string }) => void
+  setStreamingPhase: (phase: StreamingPhase, details?: { toolName?: string; skillName?: string; promptName?: string; files?: StreamingFileInfo[]; message?: string; documentsFound?: number; sources?: string[]; servers?: string[]; toolCount?: number }) => void
   addMessage: (agentId: string, message: ChatMessage) => void
   updateMessage: (agentId: string, messageId: string, updates: Partial<ChatMessage>) => void
   markMessageAnswered: (agentId: string, messageIndex: number) => void
@@ -248,7 +254,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   loadHistory: async (agentId) => {
     try {
       const today = new Date().toISOString().split('T')[0]
-      const response = await fetch(`/api/chat/${agentId}?date=${today}`)
+      const profileId = getActiveProfileId()
+      const baseUrl = `/api/chat/${agentId}?date=${today}`
+      const url = addProfileId(baseUrl, profileId)
+      const response = await fetch(url)
       const history = await response.json()
       set((state) => ({
         messages: {
@@ -442,6 +451,40 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 get().setStreamingPhase('analyzing_files', {
                   files: data.files,
                   message: data.message,
+                })
+                break
+
+              case 'rag_status':
+                // Show RAG/MCP knowledge base status
+                if (data.status === 'retrieved' && data.documentsFound > 0) {
+                  get().setStreamingPhase('rag_retrieving', {
+                    documentsFound: data.documentsFound,
+                    sources: data.sources,
+                    message: data.message,
+                  })
+                  get().updateMessage(agentId, streamingMessageId, {
+                    metadata: {
+                      isStreaming: true,
+                      ragStatus: {
+                        status: 'retrieved',
+                        documentsFound: data.documentsFound,
+                        sources: data.sources,
+                      },
+                    },
+                  })
+                } else if (data.status === 'unavailable') {
+                  // RAG not available - continue without it
+                  get().setStreamingPhase('thinking', {
+                    message: 'Knowledge base not connected',
+                  })
+                }
+                break
+
+              case 'mcp_connected':
+                // Show MCP connection status
+                get().setStreamingPhase('mcp_connected', {
+                  servers: data.servers,
+                  toolCount: data.toolCount,
                 })
                 break
 
@@ -679,9 +722,13 @@ export const useTodoStore = create<TodoState>((set) => ({
 interface ChallengeState {
   challenges: Challenge[]
   loadChallenges: () => Promise<void>
+  activateChallenge: (id: string) => Promise<{ success: boolean; todosCreated?: number }>
+  pauseChallenge: (id: string) => Promise<{ success: boolean }>
+  syncTodos: (id: string, day?: number) => Promise<{ success: boolean; synced?: number }>
+  updateChallengeStatus: (id: string, status: string) => Promise<{ success: boolean }>
 }
 
-export const useChallengeStore = create<ChallengeState>((set) => ({
+export const useChallengeStore = create<ChallengeState>((set, get) => ({
   challenges: [],
   loadChallenges: async () => {
     try {
@@ -694,6 +741,111 @@ export const useChallengeStore = create<ChallengeState>((set) => ({
     } catch (error) {
       console.error('Failed to load challenges:', error)
       set({ challenges: [] })
+    }
+  },
+  activateChallenge: async (id: string) => {
+    try {
+      const profileId = getActiveProfileId()
+      const response = await fetch(`/api/challenges/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(profileId && { 'X-Profile-Id': profileId })
+        },
+        body: JSON.stringify({ status: 'active', profileId })
+      })
+      const result = await response.json()
+      if (result.success) {
+        // Update local state
+        set((state) => ({
+          challenges: state.challenges.map((c) =>
+            c.id === id ? { ...c, status: 'active' } : c
+          )
+        }))
+        // Reload todos to show new tasks
+        useTodoStore.getState().loadTodos()
+      }
+      return { success: result.success, todosCreated: result.todosCreated }
+    } catch (error) {
+      console.error('Failed to activate challenge:', error)
+      return { success: false }
+    }
+  },
+  pauseChallenge: async (id: string) => {
+    try {
+      const profileId = getActiveProfileId()
+      const response = await fetch(`/api/challenges/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(profileId && { 'X-Profile-Id': profileId })
+        },
+        body: JSON.stringify({ status: 'paused', profileId })
+      })
+      const result = await response.json()
+      if (result.success) {
+        set((state) => ({
+          challenges: state.challenges.map((c) =>
+            c.id === id ? { ...c, status: 'paused' } : c
+          )
+        }))
+      }
+      return { success: result.success }
+    } catch (error) {
+      console.error('Failed to pause challenge:', error)
+      return { success: false }
+    }
+  },
+  syncTodos: async (id: string, day?: number) => {
+    try {
+      const profileId = getActiveProfileId()
+      const response = await fetch(`/api/challenges/${id}/sync-todos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(profileId && { 'X-Profile-Id': profileId })
+        },
+        body: JSON.stringify({ day, profileId, replace: true })
+      })
+      const result = await response.json()
+      if (result.success && result.synced > 0) {
+        // Reload todos to show new tasks
+        useTodoStore.getState().loadTodos()
+      }
+      return { success: result.success, synced: result.synced }
+    } catch (error) {
+      console.error('Failed to sync todos:', error)
+      return { success: false }
+    }
+  },
+  updateChallengeStatus: async (id: string, status: string) => {
+    if (status === 'active') {
+      return get().activateChallenge(id)
+    } else if (status === 'paused') {
+      return get().pauseChallenge(id)
+    }
+    try {
+      const profileId = getActiveProfileId()
+      const response = await fetch(`/api/challenges/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(profileId && { 'X-Profile-Id': profileId })
+        },
+        body: JSON.stringify({ status, profileId })
+      })
+      const result = await response.json()
+      if (result.success) {
+        set((state) => ({
+          challenges: state.challenges.map((c) =>
+            c.id === id ? { ...c, status } : c
+          )
+        }))
+      }
+      return { success: result.success }
+    } catch (error) {
+      console.error('Failed to update challenge status:', error)
+      return { success: false }
     }
   },
 }))
@@ -746,24 +898,31 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
   completeOnboarding: async () => {
     const { responses, type } = get()
+    const profileId = getActiveProfileId()
 
     try {
       // Save onboarding data based on type
       if (type === 'user') {
-        // Save to profile
-        await fetch('/api/user/profile', {
+        // Save to profile with profileId
+        const url = addProfileId('/api/user/profile', profileId)
+        await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(responses),
+          headers: {
+            'Content-Type': 'application/json',
+            ...(profileId && { 'X-Profile-Id': profileId })
+          },
+          body: JSON.stringify({ ...responses, profileId }),
         })
       } else if (type === 'challenge') {
         // Create challenge
-        const profileId = getActiveProfileId()
         const url = addProfileId('/api/challenges', profileId)
         await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(responses),
+          headers: {
+            'Content-Type': 'application/json',
+            ...(profileId && { 'X-Profile-Id': profileId })
+          },
+          body: JSON.stringify({ ...responses, profileId }),
         })
       }
 

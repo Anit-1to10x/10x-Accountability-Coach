@@ -147,10 +147,11 @@ export function DailyCheckIn({ isOpen, onClose, agentId }: DailyCheckInProps) {
       const challengeId = firstTask?.challengeId
 
       if (challengeId) {
-        const validationResponse = await fetch('/api/checkin/validate', {
+        const validateUrl = addProfileId('/api/checkin/validate', profileId)
+        const validationResponse = await fetch(validateUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ challengeId, aiAccepted })
+          body: JSON.stringify({ challengeId, aiAccepted, profileId })
         })
 
         const validation = await validationResponse.json()
@@ -252,10 +253,11 @@ export function DailyCheckIn({ isOpen, onClose, agentId }: DailyCheckInProps) {
 
       // Call checkin/complete for each challenge to update streaks and challenge files
       if (challengeIds.length > 0) {
+        const completeUrl = addProfileId('/api/checkin/complete', profileId)
         for (const challengeId of challengeIds) {
           const challengeTasks = taskInfos.filter(t => t.challengeId === challengeId)
 
-          await fetch('/api/checkin/complete', {
+          await fetch(completeUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -267,17 +269,19 @@ export function DailyCheckIn({ isOpen, onClose, agentId }: DailyCheckInProps) {
               blockers: contextAnswers.challenges || '',
               tomorrowCommitment: 'Continue the streak',
               timestamp: new Date().toISOString(),
-              aiAccepted
+              aiAccepted,
+              profileId
             })
           })
         }
       }
 
       // Save check-in log to file
-      await fetch('/api/checkin', {
+      const checkinUrl = addProfileId('/api/checkin', profileId)
+      await fetch(checkinUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(checkInData)
+        body: JSON.stringify({ ...checkInData, profileId })
       })
 
       setStep('confirmation')

@@ -3,7 +3,7 @@
 ## Overview
 - **ID:** 10x-vibe-marketing
 - **Type:** learning
-- **Status:** coming_soon
+- **Status:** active
 - **Start Date:** 2026-01-15
 - **Target Date:** 2026-02-14
 - **Daily Hours:** 2

@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTodoStore } from '@/lib/store'
+import { addProfileId, useProfileId, getProfileHeaders } from '@/lib/useProfileId'
 import { Input, Button, Card } from '@/components/ui'
 import {
   CheckCircle2,
@@ -239,6 +240,7 @@ function TodoDetailPanel({ todo, onClose, onToggle, onDelete }: TodoDetailProps)
 export default function TodosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const profileId = useProfileId()
   const { todos, loadTodos, addTodo, toggleTodo, deleteTodo } = useTodoStore()
   const [newTodoTitle, setNewTodoTitle] = useState('')
   const [selectedTodo, setSelectedTodo] = useState<any | null>(null)
@@ -262,7 +264,8 @@ export default function TodosPage() {
   // Load challenge tasks from API
   const loadChallengeTasks = async () => {
     try {
-      const res = await fetch('/api/todos/from-challenges')
+      const url = addProfileId('/api/todos/from-challenges', profileId)
+      const res = await fetch(url)
       const data = await res.json()
       // API returns tasks with pre-calculated dueDates
       setChallengeTasks(data.tasks || [])
@@ -319,14 +322,16 @@ export default function TodosPage() {
       // Handle challenge task toggle
       try {
         const newStatus = challengeTask.status === 'completed' ? 'pending' : 'completed'
-        const res = await fetch('/api/todos/challenge-task', {
+        const url = addProfileId('/api/todos/challenge-task', profileId)
+        const res = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getProfileHeaders(profileId) },
           body: JSON.stringify({
             challengeId: challengeTask.challengeId,
             day: challengeTask.day,
             title: challengeTask.title,
-            completed: newStatus === 'completed'
+            completed: newStatus === 'completed',
+            profileId
           })
         })
         if (res.ok) {

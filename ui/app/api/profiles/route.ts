@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
+import { SHARED_PATHS } from '@/lib/paths'
 
-const DATA_DIR = path.join(process.cwd(), '..', 'data')
-const PROFILES_DIR = path.join(DATA_DIR, 'profiles')
-const PROFILES_MD = path.join(PROFILES_DIR, 'profiles.md')
+const PROFILES_DIR = SHARED_PATHS.profiles
+const PROFILES_MD = SHARED_PATHS.profilesMd
 
 interface Profile {
   id: string

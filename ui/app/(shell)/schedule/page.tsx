@@ -114,10 +114,13 @@ export default function SchedulePage() {
       const todosUrl = addProfileId('/api/todos', profileId)
       const availabilityUrl = addProfileId('/api/user/availability', profileId)
 
+      const challengeTasksUrl = addProfileId('/api/todos/from-challenges', profileId)
+      const challengesUrl = addProfileId('/api/challenges', profileId)
+
       const [challengeTasksRes, todosRes, challengesRes, availabilityRes] = await Promise.all([
-        fetch('/api/todos/from-challenges'),
+        fetch(challengeTasksUrl),
         fetch(todosUrl),
-        fetch('/api/challenges'),
+        fetch(challengesUrl),
         fetch(availabilityUrl)
       ])
 
@@ -235,7 +238,8 @@ export default function SchedulePage() {
 
       if (event?.type === 'challenge-task' && event.challengeId && event.day) {
         // Use challenge-task API to update MD file
-        const res = await fetch('/api/todos/challenge-task', {
+        const taskUrl = addProfileId('/api/todos/challenge-task', profileId)
+        const res = await fetch(taskUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -243,7 +247,8 @@ export default function SchedulePage() {
             completed: status === 'completed',
             challengeId: event.challengeId,
             day: event.day,
-            title: event.title
+            title: event.title,
+            profileId
           }),
         })
 
@@ -254,7 +259,8 @@ export default function SchedulePage() {
         }
       } else {
         // Regular todo - use todos API
-        await fetch(`/api/todos/${id}`, {
+        const todoUrl = addProfileId(`/api/todos/${id}`, profileId)
+        await fetch(todoUrl, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ completed: status === 'completed' }),

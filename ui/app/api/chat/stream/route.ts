@@ -20,6 +20,7 @@ import { loadContextParallel } from '@/lib/api/parallel-loader';
 import { executeToolCall } from '@/lib/mcp/manager';
 import { executeCode, formatResultForLLM } from '@/lib/sandbox/executor';
 import { fetchMCPData, formatMCPContext } from '@/lib/mcp/data-fetcher';
+import { ragService, RAGContext } from '@/lib/rag';
 import type { MCPToolCall } from '@/types/mcp';
 
 export const runtime = 'nodejs';
@@ -171,6 +172,38 @@ export async function POST(request: NextRequest) {
     const attachedFiles: FileAttachment[] = files || [];
     const userTimezone = timezone || 'UTC';
 
+    // 0. PRIORITIZE MCP/RAG - Check if RAG is available and fetch context FIRST
+    let ragContext: RAGContext | null = null;
+    let ragStatus: { available: boolean; documentsFound: number; sources: string[] } = {
+      available: false,
+      documentsFound: 0,
+      sources: [],
+    };
+
+    // Try RAG retrieval first (MCP/Supabase priority)
+    const ragStartTime = Date.now();
+    if (ragService.isAvailable()) {
+      try {
+        ragContext = await ragService.agenticSearch(content, {
+          limit: 5,
+          threshold: 0.2, // Lower threshold for more matches
+        });
+
+        ragStatus = {
+          available: true,
+          documentsFound: ragContext.relevantDocuments.length,
+          sources: ragContext.sources.map(s => s.title),
+        };
+
+        console.log(`[chat/stream] RAG retrieved ${ragContext.relevantDocuments.length} documents in ${Date.now() - ragStartTime}ms`);
+      } catch (error) {
+        console.warn('[chat/stream] RAG retrieval failed:', error);
+        ragStatus.available = false;
+      }
+    } else {
+      console.log('[chat/stream] RAG not available - Supabase not configured');
+    }
+
     // 1. PARALLEL LOADING - Load all context data simultaneously
     // This is much faster than sequential loading
     // Pass selectedAgentIds for unified chat to combine capabilities
@@ -207,16 +240,39 @@ export async function POST(request: NextRequest) {
     // 4. Build enhanced system prompt with dynamic prompt matching
     // This selects the best prompts based on user's message content
     // Also uses agent capabilities to filter which prompts/skills are available
+    // Disable internal RAG since we already fetched it above
     const { systemPrompt: enhancedPrompt, matchedPrompts } = await buildEnhancedSystemPrompt(
       context,
       content,
       agentId || 'unified',
-      matchedSkill
+      matchedSkill,
+      false // Disable internal RAG - we handle it above with priority
     );
 
     // 7. Build final system prompt with all contexts
-    // Priority order: User profile > System defaults > File context
+    // Priority order: RAG Knowledge > User profile > System defaults > File context
     let systemPrompt = enhancedPrompt;
+
+    // ADD RAG CONTEXT FIRST (HIGHEST PRIORITY when available)
+    if (ragContext && ragContext.relevantDocuments.length > 0) {
+      const ragSection = `
+## Knowledge Base (RAG - MCP/Supabase)
+**IMPORTANT:** The following knowledge base articles are HIGHLY RELEVANT to the user's question.
+You MUST use this information to provide accurate, informed responses.
+This data comes from the connected MCP/Supabase knowledge base.
+
+${ragContext.contextText}
+
+**Data Source:** MCP/Supabase RAG
+**Documents Retrieved:** ${ragContext.relevantDocuments.length}
+**Confidence Score:** ${Math.round(ragContext.confidence * 100)}%
+**Sources:** ${ragContext.sources.map(s => s.title).join(', ')}
+
+---
+`;
+      // Prepend RAG context to system prompt for highest priority
+      systemPrompt = ragSection + systemPrompt;
+    }
 
     // Add user profile context (HIGH PRIORITY - overrides defaults)
     if (userProfileContext) {
@@ -270,6 +326,30 @@ When using tools, the results will be shown to the user in real-time.`;
         const reader = textStream.getReader();
 
         try {
+          // Send RAG status FIRST (highest priority)
+          if (ragStatus.available) {
+            const ragEvent = `data: ${JSON.stringify({
+              type: 'rag_status',
+              status: ragStatus.documentsFound > 0 ? 'retrieved' : 'no_matches',
+              documentsFound: ragStatus.documentsFound,
+              sources: ragStatus.sources,
+              message: ragStatus.documentsFound > 0
+                ? `Retrieved ${ragStatus.documentsFound} relevant document(s) from knowledge base`
+                : 'No matching documents found in knowledge base',
+            })}\n\n`;
+            controller.enqueue(encoder.encode(ragEvent));
+          } else {
+            // RAG not available - inform the user
+            const ragUnavailableEvent = `data: ${JSON.stringify({
+              type: 'rag_status',
+              status: 'unavailable',
+              documentsFound: 0,
+              sources: [],
+              message: 'Knowledge base (RAG) not connected. Responses based on AI knowledge only.',
+            })}\n\n`;
+            controller.enqueue(encoder.encode(ragUnavailableEvent));
+          }
+
           // Send MCP status if connected
           if (mcpStatus && mcpStatus.type === 'mcp_status' && mcpStatus.status === 'connected') {
             const mcpEvent = `data: ${JSON.stringify({

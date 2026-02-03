@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Card, Button, Input } from '@/components/ui'
+import { addProfileId, useProfileId, getProfileHeaders } from '@/lib/useProfileId'
 
 interface ContractFormData {
   challengeName: string
@@ -13,6 +14,7 @@ interface ContractFormData {
 }
 
 export default function ContractsPage() {
+  const profileId = useProfileId()
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState<ContractFormData>({
     challengeName: '',
@@ -25,10 +27,11 @@ export default function ContractsPage() {
 
   const handleCreateContract = async () => {
     try {
-      const response = await fetch('/api/contracts', {
+      const url = addProfileId('/api/contracts', profileId)
+      const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json', ...getProfileHeaders(profileId) },
+        body: JSON.stringify({ ...formData, profileId }),
       })
 
       if (response.ok) {

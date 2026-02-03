@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, Input } from '@/components/ui'
 import { Calendar, MessageSquare, Search, ChevronRight } from 'lucide-react'
+import { addProfileId, useProfileId } from '@/lib/useProfileId'
 import type { ChatHistory, ChatIndex } from '@/types'
 
 interface ChatSession {
@@ -18,6 +19,7 @@ interface ChatSession {
 
 export default function HistoryPage() {
   const router = useRouter()
+  const profileId = useProfileId()
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -27,7 +29,7 @@ export default function HistoryPage() {
   useEffect(() => {
     loadChatHistory()
     loadAgents()
-  }, [])
+  }, [profileId])
 
   const loadAgents = async () => {
     try {
@@ -43,7 +45,8 @@ export default function HistoryPage() {
     try {
       setIsLoading(true)
       // Load chat index to get all dates and agents
-      const indexRes = await fetch('/api/chat/index')
+      const indexUrl = addProfileId('/api/chat/index', profileId)
+      const indexRes = await fetch(indexUrl)
       const index: ChatIndex = await indexRes.json()
 
       // Load chat histories for all dates
@@ -54,7 +57,8 @@ export default function HistoryPage() {
 
         for (const agentId of agentIds) {
           try {
-            const historyRes = await fetch(`/api/chat/${agentId}?date=${date}`)
+            const historyUrl = addProfileId(`/api/chat/${agentId}?date=${date}`, profileId)
+            const historyRes = await fetch(historyUrl)
             const history: ChatHistory = await historyRes.json()
 
             if (history.messages && history.messages.length > 0) {

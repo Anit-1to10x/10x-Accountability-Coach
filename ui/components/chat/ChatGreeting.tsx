@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAgentStore, useChatStore } from '@/lib/store'
+import { addProfileId, useProfileId } from '@/lib/useProfileId'
 import type { Agent } from '@/types'
 
 interface ChatGreetingProps {
@@ -45,6 +46,7 @@ function AnimatedSunIcon({ isAnimating = false }: { isAnimating?: boolean }) {
 }
 
 export function ChatGreeting({ agentName, selectedAgents: propSelectedAgents }: ChatGreetingProps) {
+  const profileId = useProfileId()
   const [userName, setUserName] = useState<string>('')
   const { getSelectedAgents } = useAgentStore()
   const { isTyping, streamingPhase } = useChatStore()
@@ -56,7 +58,8 @@ export function ChatGreeting({ agentName, selectedAgents: propSelectedAgents }: 
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
-        const response = await fetch('/api/user/profile')
+        const url = addProfileId('/api/user/profile', profileId)
+        const response = await fetch(url)
         const profile = await response.json()
         if (profile.name) {
           // Capitalize first letter
@@ -69,7 +72,7 @@ export function ChatGreeting({ agentName, selectedAgents: propSelectedAgents }: 
       }
     }
     loadUserProfile()
-  }, [])
+  }, [profileId])
 
   // Get display text based on state
   const getDisplayText = () => {

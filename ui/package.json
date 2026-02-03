@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.39.0",
     "chokidar": "^3.5.3",
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",

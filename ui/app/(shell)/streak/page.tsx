@@ -21,12 +21,13 @@ export default function StreakPage() {
 
   useEffect(() => {
     loadChallenges()
-  }, [])
+  }, [profileId])
 
   const loadChallenges = async () => {
     try {
-      // Use global challenges endpoint (not profile-specific)
-      const res = await fetch('/api/challenges')
+      // Use profile-specific challenges endpoint
+      const url = addProfileId('/api/challenges', profileId)
+      const res = await fetch(url)
       const data = await res.json()
       const challengeList = data.challenges || []
 
@@ -34,7 +35,8 @@ export default function StreakPage() {
       const challengesWithTasks = await Promise.all(
         challengeList.map(async (challenge: Challenge) => {
           try {
-            const activityRes = await fetch(`/api/challenges/${challenge.id}/activity-log`)
+            const activityUrl = addProfileId(`/api/challenges/${challenge.id}/activity-log`, profileId)
+            const activityRes = await fetch(activityUrl)
             const activityData = await activityRes.json()
             const activities = activityData.activities || []
 

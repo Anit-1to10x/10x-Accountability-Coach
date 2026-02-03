@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertCircle, X, ChevronRight } from 'lucide-react'
 import { BacklogDialog } from './BacklogDialog'
+import { addProfileId, useProfileId, getProfileHeaders } from '@/lib/useProfileId'
 
 interface BacklogTask {
   id: string
@@ -19,6 +20,7 @@ interface BacklogNotificationProps {
 }
 
 export function BacklogNotification({ challengeId }: BacklogNotificationProps) {
+  const profileId = useProfileId()
   const [backlogTasks, setBacklogTasks] = useState<BacklogTask[]>([])
   const [showNotification, setShowNotification] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
@@ -26,12 +28,13 @@ export function BacklogNotification({ challengeId }: BacklogNotificationProps) {
 
   useEffect(() => {
     checkForBacklog()
-  }, [challengeId])
+  }, [challengeId, profileId])
 
   const checkForBacklog = async () => {
     try {
       // Fetch all challenge tasks
-      const res = await fetch('/api/todos/from-challenges')
+      const tasksUrl = addProfileId('/api/todos/from-challenges', profileId)
+      const res = await fetch(tasksUrl)
       const data = await res.json()
       const allTasks = data.tasks || []
 
@@ -40,7 +43,8 @@ export function BacklogNotification({ challengeId }: BacklogNotificationProps) {
       today.setHours(0, 0, 0, 0)
 
       // Fetch challenges to get start dates
-      const challengesRes = await fetch('/api/challenges')
+      const challengesUrl = addProfileId('/api/challenges', profileId)
+      const challengesRes = await fetch(challengesUrl)
       const challengesData = await challengesRes.json()
       const challenges = challengesData.challenges || []
 
@@ -83,12 +87,14 @@ export function BacklogNotification({ challengeId }: BacklogNotificationProps) {
 
   const handleAdjustTomorrow = async (tasks: BacklogTask[]) => {
     try {
-      const res = await fetch('/api/challenges/adjust-backlog', {
+      const url = addProfileId('/api/challenges/adjust-backlog', profileId)
+      const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getProfileHeaders(profileId) },
         body: JSON.stringify({
           action: 'adjust_tomorrow',
           tasks,
+          profileId,
         }),
       })
 
@@ -104,12 +110,14 @@ export function BacklogNotification({ challengeId }: BacklogNotificationProps) {
 
   const handleChangePlan = async (tasks: BacklogTask[]) => {
     try {
-      const res = await fetch('/api/challenges/adjust-backlog', {
+      const url = addProfileId('/api/challenges/adjust-backlog', profileId)
+      const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getProfileHeaders(profileId) },
         body: JSON.stringify({
           action: 'regenerate_plan',
           tasks,
+          profileId,
         }),
       })
 

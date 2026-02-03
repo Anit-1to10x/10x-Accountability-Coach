@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { ChatSidebar } from './ChatSidebar'
 import { UnifiedChat } from './UnifiedChat'
 import { useChatStore } from '@/lib/store'
+import { addProfileId, useProfileId, getProfileHeaders } from '@/lib/useProfileId'
 import type { Agent } from '@/types'
 
 interface ChatWithSidebarProps {
@@ -19,6 +20,7 @@ export function ChatWithSidebar({
   onCreateSkillClick,
   showSidebar = true
 }: ChatWithSidebarProps) {
+  const profileId = useProfileId()
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const { clearMessages, loadSessionMessages } = useChatStore()
@@ -70,12 +72,14 @@ export function ChatWithSidebar({
 
   const createSession = async (firstMessage: string) => {
     try {
-      const res = await fetch('/api/chat/sessions', {
+      const url = addProfileId('/api/chat/sessions', profileId)
+      const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getProfileHeaders(profileId) },
         body: JSON.stringify({
           agentId,
-          firstMessage
+          firstMessage,
+          profileId
         })
       })
 

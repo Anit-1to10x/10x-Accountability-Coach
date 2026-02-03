@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { Bell, X, CheckCircle, AlertTriangle, Zap, Info, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { addProfileId, useProfileId } from '@/lib/useProfileId'
 
 interface Notification {
   id: string
@@ -26,6 +27,7 @@ interface Notification {
  */
 export function NotificationBell() {
   const router = useRouter()
+  const profileId = useProfileId()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -35,7 +37,8 @@ export function NotificationBell() {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await fetch('/api/notifications')
+        const url = addProfileId('/api/notifications', profileId)
+        const res = await fetch(url)
         const data = await res.json()
         setNotifications(data.notifications || [])
         setUnreadCount(data.unreadCount || 0)
@@ -48,7 +51,7 @@ export function NotificationBell() {
     const interval = setInterval(fetchNotifications, 30000) // 30 seconds
 
     return () => clearInterval(interval)
-  }, [])
+  }, [profileId])
 
   // Close dropdown when clicking outside
   useEffect(() => {

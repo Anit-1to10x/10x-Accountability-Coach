@@ -23,6 +23,7 @@ import {
   getAgentPrompts,
   AgentCapabilities,
 } from '../agent-capabilities';
+import { ragService, RAGContext } from '../rag';
 
 export interface UserProfile {
   id: string;
@@ -126,6 +127,7 @@ export interface UserContext {
   recentCheckins: CheckinRecord[];
   currentDate: string;
   datetime: DateTimeContext;
+  ragContext?: RAGContext;
 }
 
 /**
@@ -717,10 +719,28 @@ export async function buildEnhancedSystemPrompt(
   context: UserContext,
   userMessage: string,
   agentId: string = 'unified',
-  matchedSkill?: { name: string; body: string } | null
-): Promise<{ systemPrompt: string; matchedPrompts: PromptMatchResult; agentCapabilities: AgentCapabilities }> {
+  matchedSkill?: { name: string; body: string } | null,
+  enableRAG: boolean = true
+): Promise<{ systemPrompt: string; matchedPrompts: PromptMatchResult; agentCapabilities: AgentCapabilities; ragContext?: RAGContext }> {
   // Get agent capabilities (which prompts/skills this agent can use)
   const capabilities = await getAgentCapabilities(agentId);
+
+  // Fetch RAG context if enabled and available
+  let ragContext: RAGContext | undefined;
+  if (enableRAG && ragService.isAvailable()) {
+    try {
+      ragContext = await ragService.agenticSearch(userMessage, {
+        limit: 3,
+        threshold: 0.3,
+      });
+      // Only include if we found relevant documents
+      if (ragContext.relevantDocuments.length === 0) {
+        ragContext = undefined;
+      }
+    } catch (error) {
+      console.warn('[Context Builder] RAG search failed:', error);
+    }
+  }
 
   // Match prompts to user message
   let matchedPrompts = await matchPrompts(userMessage);
@@ -899,6 +919,20 @@ ${capabilities.restrictions?.allowOnlyAssigned ? 'Note: Only use your assigned s
 `;
   }
 
+  // Add RAG knowledge base context if available
+  if (ragContext && ragContext.relevantDocuments.length > 0) {
+    systemPrompt += `## Knowledge Base (RAG)
+The following articles from the knowledge base may be relevant to the user's question.
+Use this information to provide more informed, accurate responses:
+
+${ragContext.contextText}
+
+**Sources:** ${ragContext.sources.map(s => s.title).join(', ')}
+**Confidence:** ${Math.round(ragContext.confidence * 100)}%
+
+`;
+  }
+
   // Add concise coaching guidelines
   systemPrompt += `## Guidelines
 - ALWAYS generate fresh, natural conversational responses - never output template text
@@ -910,7 +944,7 @@ ${capabilities.restrictions?.allowOnlyAssigned ? 'Note: Only use your assigned s
 - Personalize based on the user's stated goals and current context
 - Never show placeholders like {{variable}} - all data should be filled in`;
 
-  return { systemPrompt, matchedPrompts, agentCapabilities: capabilities };
+  return { systemPrompt, matchedPrompts, agentCapabilities: capabilities, ragContext };
 }
 
 /**

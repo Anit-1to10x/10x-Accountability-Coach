@@ -3,11 +3,13 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useChallengeStore, useTodoStore } from '@/lib/store'
+import { addProfileId, useProfileId } from '@/lib/useProfileId'
 import { ChevronDown, ChevronRight, Calendar, Clock, Target, Flame, CheckCircle2, Circle, Timer } from 'lucide-react'
 import type { Challenge, Todo } from '@/types'
 
 export function RightPanel() {
   const router = useRouter()
+  const profileId = useProfileId()
   const { challenges, loadChallenges } = useChallengeStore()
   const { todos, loadTodos } = useTodoStore()
   const [expandedNextDay, setExpandedNextDay] = useState(false)
@@ -29,7 +31,8 @@ export function RightPanel() {
   const loadChallengeTasks = async () => {
     try {
       // API returns tasks with pre-calculated dueDates
-      const tasksRes = await fetch('/api/todos/from-challenges')
+      const url = addProfileId('/api/todos/from-challenges', profileId)
+      const tasksRes = await fetch(url)
       const tasksData = await tasksRes.json()
 
       // API now returns tasks with dueDate and challengeStatus

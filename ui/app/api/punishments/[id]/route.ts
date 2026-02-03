@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
 import type { Punishment } from '@/types/streak'
-import { DATA_DIR } from '@/lib/paths'
+import { DATA_DIR, getProfilePaths } from '@/lib/paths'
 
-const PUNISHMENTS_DIR = path.join(DATA_DIR, 'punishments')
-const ACTIVE_FILE = path.join(PUNISHMENTS_DIR, 'active.md')
-const HISTORY_FILE = path.join(PUNISHMENTS_DIR, 'history.md')
+function getPunishmentPaths(profileId: string | null) {
+  const punishmentsDir = profileId
+    ? getProfilePaths(profileId).punishments
+    : path.join(DATA_DIR, 'punishments')
+  return {
+    dir: punishmentsDir,
+    activeFile: path.join(punishmentsDir, 'active.md'),
+    historyFile: path.join(punishmentsDir, 'history.md'),
+  }
+}
 
 interface PunishmentRecord {
   punishment: Punishment
@@ -65,9 +72,12 @@ export async function GET(
 ) {
   try {
     const { id } = params
+    const { searchParams } = new URL(request.url)
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+    const paths = getPunishmentPaths(profileId)
 
     // Check active punishments
-    const activeData = await fs.readFile(ACTIVE_FILE, 'utf-8')
+    const activeData = await fs.readFile(paths.activeFile, 'utf-8')
     const activePunishments: PunishmentRecord[] = parsePunishmentsMd(activeData)
     const activePunishment = activePunishments.find(p => p.punishment.id === id)
 
@@ -76,7 +86,7 @@ export async function GET(
     }
 
     // Check history
-    const historyData = await fs.readFile(HISTORY_FILE, 'utf-8')
+    const historyData = await fs.readFile(paths.historyFile, 'utf-8')
     const historyPunishments: PunishmentRecord[] = parsePunishmentsMd(historyData)
     const historyPunishment = historyPunishments.find(p => p.punishment.id === id)
 
@@ -105,10 +115,14 @@ export async function PATCH(
   try {
     const { id } = params
     const body = await request.json()
-    const { status } = body as { status: 'executed' | 'forgiven' }
+    const { status, profileId: bodyProfileId } = body as { status: 'executed' | 'forgiven', profileId?: string }
+
+    const { searchParams } = new URL(request.url)
+    const profileId = bodyProfileId || searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+    const paths = getPunishmentPaths(profileId)
 
     // Read active punishments
-    const activeData = await fs.readFile(ACTIVE_FILE, 'utf-8')
+    const activeData = await fs.readFile(paths.activeFile, 'utf-8')
     let activePunishments: PunishmentRecord[] = parsePunishmentsMd(activeData)
 
     // Find and update punishment
@@ -126,7 +140,7 @@ export async function PATCH(
     punishmentRecord.punishment.executedAt = new Date().toISOString()
 
     // Move to history
-    const historyData = await fs.readFile(HISTORY_FILE, 'utf-8')
+    const historyData = await fs.readFile(paths.historyFile, 'utf-8')
     let historyContent = historyData
 
     // Append to history
@@ -166,8 +180,8 @@ export async function PATCH(
     }
 
     // Save both files
-    await fs.writeFile(ACTIVE_FILE, newActiveContent, 'utf-8')
-    await fs.writeFile(HISTORY_FILE, historyContent, 'utf-8')
+    await fs.writeFile(paths.activeFile, newActiveContent, 'utf-8')
+    await fs.writeFile(paths.historyFile, historyContent, 'utf-8')
 
     // Log to index.md
     try {
@@ -208,9 +222,12 @@ export async function DELETE(
 ) {
   try {
     const { id } = params
+    const { searchParams } = new URL(request.url)
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+    const paths = getPunishmentPaths(profileId)
 
     // Read active punishments
-    const activeData = await fs.readFile(ACTIVE_FILE, 'utf-8')
+    const activeData = await fs.readFile(paths.activeFile, 'utf-8')
     let activePunishments: PunishmentRecord[] = parsePunishmentsMd(activeData)
 
     // Filter out the punishment
@@ -243,7 +260,7 @@ export async function DELETE(
     }
 
     // Save
-    await fs.writeFile(ACTIVE_FILE, newActiveContent, 'utf-8')
+    await fs.writeFile(paths.activeFile, newActiveContent, 'utf-8')
 
     return NextResponse.json({
       success: true,

@@ -296,7 +296,7 @@ Most productive during ${productiveLabels[data.productiveTime]}.
 
     // Add profile to registry via profiles API
     try {
-      await fetch('http://localhost:3000/api/profiles', {
+      await fetch(`${request.nextUrl.origin}/api/profiles`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

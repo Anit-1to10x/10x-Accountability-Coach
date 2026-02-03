@@ -2,41 +2,26 @@
   "app": {
     "name": "10x Accountability Coach",
     "version": "1.1.0",
-    "owner": {
-      "profileId": "arjun-gmail-com",
-      "name": "Arjun",
-      "email": "arjun@gmail.com",
-      "role": "owner"
-    },
-    "accountType": "family",
-    "defaultProfile": "arjun-gmail-com"
+    "owner": null,
+    "accountType": "personal",
+    "defaultProfile": null
   },
   "features": {
     "multiProfile": true,
-    "familyMode": true,
+    "familyMode": false,
     "ownerCanManageAll": true
   },
   "profiles": {
-    "default": "arjun-gmail-com",
-    "owner": "arjun-gmail-com",
-    "members": [
-      "arjun-gmail-com"
-    ]
+    "default": null,
+    "owner": null,
+    "members": []
   },
-  "challenges": {
-    "getting-started": {
-      "owner": "arjun-gmail-com",
-      "status": "active"
-    },
-    "2026-agentic-analysis-skills": {
-      "owner": "arjun-gmail-com",
-      "status": "active"
-    }
-  },
+  "challenges": {},
   "settings": {
     "autoSelectOwnerProfile": true,
     "showFamilyDashboard": false,
-    "timezone": "America/New_York"
+    "timezone": "auto"
   },
-  "lastUpdated": "2026-01-01T00:00:00Z"
+  "dataSource": "local",
+  "lastUpdated": null
 }

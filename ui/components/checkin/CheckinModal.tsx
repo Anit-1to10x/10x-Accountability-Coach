@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, Button } from '@/components/ui'
+import { addProfileId, useProfileId, getProfileHeaders } from '@/lib/useProfileId'
 import {
   CheckCircle2,
   Circle,
@@ -45,6 +46,7 @@ const MOODS = [
 ]
 
 export function CheckinModal({ isOpen, onClose, challenge }: CheckinModalProps) {
+  const profileId = useProfileId()
   const [step, setStep] = useState(1)
   const [tasks, setTasks] = useState<Task[]>([])
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set())
@@ -75,12 +77,14 @@ export function CheckinModal({ isOpen, onClose, challenge }: CheckinModalProps) 
     setLoading(true)
     try {
       // Load all challenge tasks
-      const res = await fetch('/api/todos/from-challenges')
+      const tasksUrl = addProfileId('/api/todos/from-challenges', profileId)
+      const res = await fetch(tasksUrl)
       const data = await res.json()
       const allTasks = data.tasks || []
 
       // Load challenges to get start dates
-      const challengesRes = await fetch('/api/challenges')
+      const challengesUrl = addProfileId('/api/challenges', profileId)
+      const challengesRes = await fetch(challengesUrl)
       const challengesData = await challengesRes.json()
       const challenges = challengesData.challenges || []
 
@@ -159,10 +163,11 @@ export function CheckinModal({ isOpen, onClose, challenge }: CheckinModalProps) 
         }))
       }
 
-      const res = await fetch('/api/checkin/complete', {
+      const checkinUrl = addProfileId('/api/checkin/complete', profileId)
+      const res = await fetch(checkinUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(checkinData),
+        headers: { 'Content-Type': 'application/json', ...getProfileHeaders(profileId) },
+        body: JSON.stringify({ ...checkinData, profileId }),
       })
 
       const result = await res.json()

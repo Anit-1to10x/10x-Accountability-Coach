@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
 import type { Challenge, Punishment } from '@/types/streak'
-import { DATA_DIR, PATHS } from '@/lib/paths'
+import { DATA_DIR, PATHS, getProfilePaths } from '@/lib/paths'
 
-const PUNISHMENTS_DIR = path.join(DATA_DIR, 'punishments')
-const ACTIVE_FILE = path.join(PUNISHMENTS_DIR, 'active.json')
-const HISTORY_FILE = path.join(PUNISHMENTS_DIR, 'history.json')
+function getPunishmentPaths(profileId: string | null) {
+  const punishmentsDir = profileId
+    ? getProfilePaths(profileId).punishments
+    : path.join(DATA_DIR, 'punishments')
+  return {
+    dir: punishmentsDir,
+    activeFile: path.join(punishmentsDir, 'active.json'),
+    historyFile: path.join(punishmentsDir, 'history.json'),
+  }
+}
 
 interface PunishmentRecord {
   punishment: Punishment
@@ -95,7 +102,8 @@ async function triggerPunishment(
   punishment: Punishment,
   challengeId: string,
   challengeName: string,
-  origin: string
+  origin: string,
+  profileId: string | null
 ) {
   try {
     // Update punishment status
@@ -106,10 +114,11 @@ async function triggerPunishment(
     }
 
     // Read active punishments
-    await fs.mkdir(PUNISHMENTS_DIR, { recursive: true })
+    const paths = getPunishmentPaths(profileId)
+    await fs.mkdir(paths.dir, { recursive: true })
     let activePunishments: PunishmentRecord[] = []
     try {
-      const data = await fs.readFile(ACTIVE_FILE, 'utf-8')
+      const data = await fs.readFile(paths.activeFile, 'utf-8')
       activePunishments = JSON.parse(data)
     } catch {
       // File doesn't exist yet
@@ -122,7 +131,7 @@ async function triggerPunishment(
       challengeName,
     })
 
-    await fs.writeFile(ACTIVE_FILE, JSON.stringify(activePunishments, null, 2), 'utf-8')
+    await fs.writeFile(paths.activeFile, JSON.stringify(activePunishments, null, 2), 'utf-8')
 
     // Log to index.md
     try {
@@ -154,6 +163,9 @@ async function triggerPunishment(
 // POST: Check all challenges for punishment triggers
 export async function POST(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const profileId = searchParams.get('profileId') || request.headers.get('X-Profile-Id')
+
     const challenges = await getChallenges()
     const triggered: Array<{
       challengeId: string
@@ -215,7 +227,8 @@ export async function POST(request: NextRequest) {
             punishment,
             challenge.id,
             challenge.name,
-            request.nextUrl.origin
+            request.nextUrl.origin,
+            profileId
           )
 
           if (triggeredPunishment) {

@@ -21,6 +21,7 @@ import {
   X
 } from 'lucide-react'
 import { AnimatedButton } from '@/components/ui/AnimatedButton'
+import { addProfileId, useProfileId, getProfileHeaders } from '@/lib/useProfileId'
 import type { Challenge } from '@/types/streak'
 
 // Challenge templates for quick start
@@ -61,6 +62,7 @@ const CHALLENGE_TEMPLATES = [
 
 export default function ChallengesPage() {
   const router = useRouter()
+  const profileId = useProfileId()
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'active' | 'paused' | 'completed' | 'failed'>('all')
@@ -85,7 +87,8 @@ export default function ChallengesPage() {
 
   const loadChallenges = async () => {
     try {
-      const res = await fetch('/api/challenges')
+      const url = addProfileId('/api/challenges', profileId)
+      const res = await fetch(url)
       const data = await res.json()
       setChallenges(data.challenges || [])
     } catch (error) {

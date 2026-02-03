@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
-import { DATA_DIR, PATHS } from '@/lib/paths'
+import { DATA_DIR, PATHS, getProfilePaths } from '@/lib/paths'
 
 interface TaskInfo {
   id: string
@@ -362,6 +362,49 @@ export async function POST(request: NextRequest) {
       streakMessage = `🔥 ${streakResult.streak} day streak! Keep the momentum!`
     }
 
+    // AUTO-SYNC NEXT DAY: If all tasks completed, sync tomorrow's tasks
+    let nextDaySynced = null
+    if (completedCount === totalCount && completedCount > 0 && primaryChallengeId) {
+      // Get profileId from header
+      const profileId = request.headers.get('X-Profile-Id')
+
+      // Find the current day from tasks
+      const currentDay = tasks[0]?.day || 1
+      const nextDay = currentDay + 1
+
+      try {
+        // Call the sync-todos endpoint internally
+        const syncResponse = await fetch(
+          `${request.nextUrl.origin}/api/challenges/${primaryChallengeId}/sync-todos`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(profileId && { 'X-Profile-Id': profileId })
+            },
+            body: JSON.stringify({
+              day: nextDay,
+              profileId,
+              replace: true // Replace existing todos with next day's tasks
+            })
+          }
+        )
+
+        if (syncResponse.ok) {
+          const syncResult = await syncResponse.json()
+          if (syncResult.synced > 0) {
+            nextDaySynced = {
+              day: nextDay,
+              tasksCount: syncResult.synced,
+              tasks: syncResult.tasks
+            }
+          }
+        }
+      } catch (syncError) {
+        console.log('Auto-sync next day failed (non-critical):', syncError)
+      }
+    }
+
     return NextResponse.json({
       success: true,
       tasksCompleted: completedCount,
@@ -369,7 +412,8 @@ export async function POST(request: NextRequest) {
       streak: streakResult.streak,
       progress: streakResult.progress,
       streakMessage,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split('T')[0],
+      nextDaySynced
     })
 
   } catch (error: any) {

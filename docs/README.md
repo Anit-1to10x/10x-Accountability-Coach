@@ -54,7 +54,7 @@ Edit `styles.css` and modify the CSS variables:
 Edit `index.html` directly - it's plain HTML with no build step.
 
 ### Change GitHub Links
-Search for `github.com/AnitChaudhry` in `index.html` and replace with your repo URL.
+Search for `github.com/Anit-1to10x` in `index.html` and replace with your repo URL if forking.
 
 ## No Build Required
 

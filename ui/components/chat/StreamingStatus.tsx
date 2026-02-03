@@ -14,11 +14,15 @@ import {
   Zap,
   MessageSquare,
   FileSearch,
+  Database,
+  Server,
 } from 'lucide-react'
 
 export type StreamingPhase =
   | 'idle'
   | 'thinking'
+  | 'rag_retrieving'
+  | 'mcp_connected'
   | 'matching_skill'
   | 'matching_prompt'
   | 'loading_tools'
@@ -35,6 +39,10 @@ interface StreamingStatusProps {
   skillName?: string
   promptName?: string
   files?: Array<{ name: string; type: string; size: number }>
+  documentsFound?: number
+  sources?: string[]
+  servers?: string[]
+  toolCount?: number
   isVisible?: boolean
 }
 
@@ -54,6 +62,18 @@ const phaseConfig: Record<StreamingPhase, {
     icon: Brain,
     label: 'Thinking',
     color: 'text-purple-400',
+    animate: true,
+  },
+  rag_retrieving: {
+    icon: Database,
+    label: 'Searching knowledge base',
+    color: 'text-emerald-400',
+    animate: true,
+  },
+  mcp_connected: {
+    icon: Server,
+    label: 'MCP connected',
+    color: 'text-cyan-400',
     animate: true,
   },
   matching_skill: {
@@ -113,6 +133,10 @@ export function StreamingStatus({
   skillName,
   promptName,
   files,
+  documentsFound,
+  sources,
+  servers,
+  toolCount,
   isVisible = true,
 }: StreamingStatusProps) {
   const config = phaseConfig[phase]
@@ -120,7 +144,13 @@ export function StreamingStatus({
 
   // Build the display text
   let displayText = config.label
-  if (phase === 'executing_tool' && toolName) {
+  if (phase === 'rag_retrieving' && documentsFound !== undefined) {
+    displayText = documentsFound > 0
+      ? `Found ${documentsFound} relevant document${documentsFound > 1 ? 's' : ''} in knowledge base`
+      : 'Searching knowledge base'
+  } else if (phase === 'mcp_connected' && servers) {
+    displayText = `MCP connected (${toolCount || 0} tools available)`
+  } else if (phase === 'executing_tool' && toolName) {
     displayText = `Using ${formatName(toolName)}`
   } else if (phase === 'matching_skill' && skillName) {
     displayText = `Matched: ${skillName}`

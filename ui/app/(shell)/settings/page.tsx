@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { User, Users, Clock, Shield, FileText, Download, Trash2, ChevronDown, ChevronRight, Edit2, HelpCircle, BookOpen, Zap, CheckCircle, XCircle, Database, Server, Loader2, Check, Bot, Key } from 'lucide-react'
+import { addProfileId, useProfileId, getProfileHeaders } from '@/lib/useProfileId'
 
 // Lazy load heavy components
 const DataSourceToggle = lazy(() => import('@/components/settings/DataSourceToggle').then(mod => ({ default: mod.DataSourceToggle })))
@@ -25,6 +26,7 @@ function SectionLoader() {
 }
 
 export default function SettingsPage() {
+  const profileId = useProfileId()
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -121,7 +123,8 @@ export default function SettingsPage() {
       }
 
       // Load contracts
-      const contractsRes = await fetch('/api/contracts')
+      const contractsUrl = addProfileId('/api/contracts', profileId)
+      const contractsRes = await fetch(contractsUrl)
       const contractsData = await contractsRes.json()
       setContracts(contractsData.contracts || [])
 
@@ -143,10 +146,11 @@ export default function SettingsPage() {
   const handleSaveProfile = async () => {
     setIsSaving(true)
     try {
-      await fetch('/api/user/profile', {
+      const url = addProfileId('/api/user/profile', profileId)
+      await fetch(url, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile, preferences }),
+        headers: { 'Content-Type': 'application/json', ...getProfileHeaders(profileId) },
+        body: JSON.stringify({ profile, preferences, profileId }),
       })
       alert('Profile saved successfully!')
     } catch (error) {

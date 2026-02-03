@@ -117,7 +117,8 @@ export function Capabilities({ agent, onActionClick }: CapabilitiesProps) {
 
   const loadPreviousActivities = async () => {
     try {
-      const res = await fetch('/api/activity-log')
+      const url = addProfileId('/api/activity-log', profileId)
+      const res = await fetch(url)
       if (res.ok) {
         const data = await res.json()
         const activities = data.activities?.slice(0, 5) || []

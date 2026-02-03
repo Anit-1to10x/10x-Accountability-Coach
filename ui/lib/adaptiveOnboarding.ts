@@ -22,6 +22,9 @@ interface UserContext {
  */
 export async function loadUserContext(): Promise<UserContext> {
   try {
+    // Get profileId for all API calls
+    const profileId = typeof window !== 'undefined' ? localStorage.getItem('activeProfileId') : null
+
     // Load profile
     let userName: string | undefined
     let persona: 'strict' | 'balanced' | 'friendly' | undefined
@@ -29,7 +32,8 @@ export async function loadUserContext(): Promise<UserContext> {
     let resolution: string | undefined
 
     try {
-      const profileRes = await fetch('/api/user/profile')
+      const profileUrl = addProfileId('/api/user/profile', profileId)
+      const profileRes = await fetch(profileUrl)
       if (profileRes.ok) {
         const profileData = await profileRes.json()
         userName = profileData.name
@@ -41,7 +45,8 @@ export async function loadUserContext(): Promise<UserContext> {
 
     // Load resolution
     try {
-      const resolutionRes = await fetch('/api/user/resolution')
+      const resolutionUrl = addProfileId('/api/user/resolution', profileId)
+      const resolutionRes = await fetch(resolutionUrl)
       if (resolutionRes.ok) {
         const resolutionData = await resolutionRes.json()
         if (resolutionData.resolution) {
@@ -58,7 +63,6 @@ export async function loadUserContext(): Promise<UserContext> {
     let totalDailyHours = 0
 
     try {
-      const profileId = typeof window !== 'undefined' ? localStorage.getItem('activeProfileId') : null
       const url = addProfileId('/api/challenges', profileId)
       const challengesRes = await fetch(url)
       if (challengesRes.ok) {
@@ -77,7 +81,8 @@ export async function loadUserContext(): Promise<UserContext> {
     // Load preferred times from profile
     let preferredTimes: string[] = []
     try {
-      const availabilityRes = await fetch('/api/user/availability')
+      const availabilityUrl = addProfileId('/api/user/availability', profileId)
+      const availabilityRes = await fetch(availabilityUrl)
       if (availabilityRes.ok) {
         const availabilityData = await availabilityRes.json()
         preferredTimes = availabilityData.slots || []

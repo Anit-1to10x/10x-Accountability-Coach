@@ -9,11 +9,13 @@ import {
 } from 'lucide-react'
 import { AnimatedButton } from '@/components/ui/AnimatedButton'
 import type { Challenge, Milestone } from '@/types/streak'
+import { addProfileId, useProfileId, getProfileHeaders } from '@/lib/useProfileId'
 
 export default function StreakDetailPage() {
   const params = useParams()
   const router = useRouter()
   const challengeId = params.id as string
+  const profileId = useProfileId()
 
   const [challenge, setChallenge] = useState<Challenge | null>(null)
   const [milestones, setMilestones] = useState<Milestone[]>([])
@@ -23,12 +25,13 @@ export default function StreakDetailPage() {
 
   useEffect(() => {
     loadChallengeDetails()
-  }, [challengeId])
+  }, [challengeId, profileId])
 
   const loadChallengeDetails = async () => {
     try {
-      // Load challenge
-      const challengeRes = await fetch(`/api/challenges?id=${challengeId}`)
+      // Load challenge with profileId
+      const challengeUrl = addProfileId(`/api/challenges?id=${challengeId}`, profileId)
+      const challengeRes = await fetch(challengeUrl)
       const challengeData = await challengeRes.json()
 
       if (challengeData.challenges && challengeData.challenges.length > 0) {
@@ -38,7 +41,8 @@ export default function StreakDetailPage() {
 
       // Load activity history
       try {
-        const activityRes = await fetch(`/api/challenges/${challengeId}/activity-log`)
+        const activityUrl = addProfileId(`/api/challenges/${challengeId}/activity-log`, profileId)
+        const activityRes = await fetch(activityUrl)
         const activityData = await activityRes.json()
         setActivityHistory(activityData.activities || [])
       } catch (err) {
@@ -47,7 +51,8 @@ export default function StreakDetailPage() {
 
       // Load milestones from progress.md
       try {
-        const progressRes = await fetch(`/api/challenges/${challengeId}/progress`)
+        const progressUrl = addProfileId(`/api/challenges/${challengeId}/progress`, profileId)
+        const progressRes = await fetch(progressUrl)
         const progressData = await progressRes.json()
         setMilestones(progressData.milestones || [])
       } catch (err) {
@@ -56,7 +61,8 @@ export default function StreakDetailPage() {
 
       // Load backlog
       try {
-        const backlogRes = await fetch(`/api/challenges/${challengeId}/backlog`)
+        const backlogUrl = addProfileId(`/api/challenges/${challengeId}/backlog`, profileId)
+        const backlogRes = await fetch(backlogUrl)
         const backlogData = await backlogRes.json()
         setBacklogTasks(backlogData.tasks || [])
       } catch (err) {
@@ -71,11 +77,12 @@ export default function StreakDetailPage() {
 
   const handleCheckIn = async () => {
     try {
-      await fetch('/api/checkin', {
+      await fetch(addProfileId('/api/checkin', profileId), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getProfileHeaders(profileId) },
         body: JSON.stringify({
           challengeId,
+          profileId,
           date: new Date().toISOString(),
           notes: 'Manual check-in from streak page',
         }),
@@ -88,10 +95,10 @@ export default function StreakDetailPage() {
 
   const handleStatusChange = async (newStatus: 'active' | 'paused' | 'completed' | 'failed') => {
     try {
-      const res = await fetch(`/api/challenges/${challengeId}/status`, {
+      const res = await fetch(addProfileId(`/api/challenges/${challengeId}/status`, profileId), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
+        headers: { 'Content-Type': 'application/json', ...getProfileHeaders(profileId) },
+        body: JSON.stringify({ status: newStatus, profileId }),
       })
       const data = await res.json()
       if (data.success) {
@@ -111,14 +118,15 @@ export default function StreakDetailPage() {
     taskIndex: number
   ) => {
     try {
-      const res = await fetch('/api/todos/challenge-task', {
+      const res = await fetch(addProfileId('/api/todos/challenge-task', profileId), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getProfileHeaders(profileId) },
         body: JSON.stringify({
           challengeId,
           day,
           title: taskText,
           completed,
+          profileId,
         }),
       })
 

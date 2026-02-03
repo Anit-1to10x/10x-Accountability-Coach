@@ -1,5 +1,29 @@
 {
-  "enabled": false,
-  "servers": [],
-  "lastUpdated": "2026-01-19T06:36:50.434Z"
+  "enabled": true,
+  "servers": [
+    {
+      "id": "supabase-mcp",
+      "name": "Supabase",
+      "type": "stdio",
+      "enabled": true,
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "REDACTED_TOKEN"
+      ],
+      "env": {
+        "SUPABASE_URL": "https://REDACTED_PROJECT_ID.supabase.co",
+        "SUPABASE_PROJECT_ID": "REDACTED_PROJECT_ID"
+      },
+      "status": "disconnected",
+      "capabilities": {
+        "tools": true,
+        "resources": true,
+        "prompts": false
+      }
+    }
+  ],
+  "lastUpdated": "2026-01-23T00:00:00.000Z"
 }

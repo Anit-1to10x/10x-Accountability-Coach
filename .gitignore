@@ -37,10 +37,17 @@ Thumbs.db
 .openanalyst-data/
 .streak/
 
-# User-specific data folders (keep structure, ignore user content)
+# Setup tracking (local to each user's machine)
+.setup-log.json
+
+# User-specific data folders (created at runtime, not in repo)
+data/profiles/
+data/todos/
+data/checkins/
 data/chats/
-data/.cache-index.json
+data/.registry/
 data/.responses/
+data/.cache-index.json
 
 # Claude Code local settings
 .claude/settings.local.json

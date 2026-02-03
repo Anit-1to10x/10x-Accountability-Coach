@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
 import fs from 'fs/promises'
 import { loadSkillContent } from '@/lib/skillParser'
+import { SKILLS_DIR } from '@/lib/paths'
 
 // GET - Get individual skill details with full SKILL.md content
 export async function GET(
@@ -10,8 +11,7 @@ export async function GET(
 ) {
   try {
     const skillId = params.id
-    const skillsDir = path.join(process.cwd(), '..', 'skills')
-    const skillPath = path.join(skillsDir, skillId)
+    const skillPath = path.join(SKILLS_DIR, skillId)
 
     // Load full SKILL.md content
     const content = await loadSkillContent(skillPath)
@@ -52,8 +52,7 @@ export async function PUT(
       )
     }
 
-    const skillsDir = path.join(process.cwd(), '..', 'skills')
-    const skillPath = path.join(skillsDir, skillId)
+    const skillPath = path.join(SKILLS_DIR, skillId)
     const skillMdPath = path.join(skillPath, 'SKILL.md')
 
     // Check if skill directory exists
