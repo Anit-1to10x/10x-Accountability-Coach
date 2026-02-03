@@ -42,7 +42,7 @@ If you have [Claude Code](https://claude.ai/claude-code) installed:
 
 1. Open this project folder in Claude Code
 2. Say: **"start my app"**
-3. Provide your API key when asked (get one at https://10x.events/api-key)
+3. Provide your API key when asked (get one from your OpenAnalyst dashboard)
 4. Claude Code will automatically install dependencies, configure everything, and start the app!
 
 > Claude Code handles everything automatically - dependencies, environment setup, and starting the server.
@@ -61,7 +61,7 @@ cd ui && npm install
 ### 2. Configure API Key (Required)
 
 #### Step 1: Get Your API Key
-1. Visit **https://10x.events/api-key**
+1. Visit **https://10x.in/dashboard**
 2. Enter your email address
 3. Check your inbox for the API key email
 
@@ -109,7 +109,7 @@ sk-oa-v1-xxxxxxxxxxxxxxxxxxxxxxxx
 # ===========================================
 # OpenAnalyst API Configuration (Required)
 # ===========================================
-# Get your API key at: https://10x.events/api-key
+# Get your API key at: https://10x.in/dashboard
 
 OPENANALYST_API_URL=https://api.openanalyst.com/api
 OPENANALYST_API_KEY=sk-oa-v1-YOUR-ACTUAL-API-KEY-HERE

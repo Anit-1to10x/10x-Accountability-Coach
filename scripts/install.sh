@@ -66,7 +66,7 @@ if [ ! -f ".env.local" ]; then
     echo -e "${YELLOW}No .env.local file found.${NC}"
     echo ""
     echo "You need an OpenAnalyst API key to use 10X Coach."
-    echo -e "Get one at: ${BLUE}https://10x.events/api-key${NC}"
+    echo -e "Get one at: ${BLUE}https://10x.in/dashboard${NC}"
     echo ""
     read -p "Enter your API key (or press Enter to skip): " API_KEY
 

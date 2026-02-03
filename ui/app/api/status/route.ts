@@ -37,8 +37,8 @@ export async function GET() {
       required: true,
       description: 'Main AI brain for chat and coaching',
       envKey: 'OPENANALYST_API_KEY',
-      getKeyUrl: 'https://10x.events/api-key',
-      instructions: 'Get your API key at https://10x.events/api-key and add OPENANALYST_API_KEY=sk-oa-v1-xxx to ui/.env.local',
+      getKeyUrl: 'https://10x.in/dashboard',
+      instructions: 'Get your API key at https://10x.in/dashboard and add OPENANALYST_API_KEY=sk-oa-v1-xxx to ui/.env.local',
     },
     // Image Generation - Gemini API (Optional)
     gemini: {

@@ -35,9 +35,9 @@ const API_KEYS: APIKeyDefinition[] = [
   {
     key: 'OPENANALYST_API_KEY',
     label: 'OpenAnalyst API Key',
-    description: 'Required for the main AI brain. Get your key at 10x.events/api-key',
+    description: 'Required for the main AI brain. Get your key at 10x.in/dashboard',
     required: true,
-    getKeyUrl: 'https://10x.events/api-key',
+    getKeyUrl: 'https://10x.in/dashboard',
     placeholder: 'sk-oa-v1-...',
     prefix: 'sk-oa-',
   },

@@ -63,7 +63,7 @@ Results:
 
 > **Do you have an OpenAnalyst API key?**
 >
-> Get one free at: **https://10x.events/api-key**
+> Get one free at: **https://10x.in/dashboard**
 >
 > Please paste your API key (starts with `sk-oa-v1-`):
 
@@ -366,7 +366,7 @@ The following are automatically ignored:
 ## API KEY INFORMATION
 
 ### Where to Get API Key
-1. Visit **https://10x.events/api-key**
+1. Visit **https://10x.in/dashboard**
 2. Enter email address
 3. Receive API key via email
 

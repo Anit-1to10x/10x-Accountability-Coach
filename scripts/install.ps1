@@ -68,7 +68,7 @@ if (-not (Test-Path $envFile)) {
     Write-Host ""
     Write-Host "You need an OpenAnalyst API key to use 10X Coach."
     Write-Host "Get one at: " -NoNewline
-    Write-Host "https://10x.events/api-key" -ForegroundColor Blue
+    Write-Host "https://10x.in/dashboard" -ForegroundColor Blue
     Write-Host ""
     $apiKey = Read-Host "Enter your API key (or press Enter to skip)"
 

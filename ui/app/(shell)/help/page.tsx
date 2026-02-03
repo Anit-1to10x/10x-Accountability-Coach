@@ -773,7 +773,7 @@ claude "start my app"
           <div>
             <h4 className="font-semibold mb-3">API Key Setup</h4>
             <ol className="text-sm text-oa-text-secondary space-y-2 list-decimal list-inside">
-              <li>Visit <a href="https://10x.events/api-key" target="_blank" className="text-oa-accent hover:underline">10x.events/api-key</a></li>
+              <li>Visit <a href="https://10x.in/dashboard" target="_blank" className="text-oa-accent hover:underline">10x.in/dashboard</a></li>
               <li>Enter your email address</li>
               <li>Check your inbox for the API key</li>
               <li>Paste the key in Settings → API Configuration</li>

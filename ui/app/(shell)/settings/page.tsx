@@ -216,7 +216,7 @@ export default function SettingsPage() {
                         The main AI brain is not configured. The app will not work without this API key.
                       </p>
                       <ol className="text-xs text-red-300 space-y-1 list-decimal list-inside mb-3">
-                        <li>Get your API key at <a href="https://10x.events/api-key" target="_blank" rel="noopener noreferrer" className="underline hover:text-red-200">https://10x.events/api-key</a></li>
+                        <li>Get your API key at <a href="https://10x.in/dashboard" target="_blank" rel="noopener noreferrer" className="underline hover:text-red-200">https://10x.in/dashboard</a></li>
                         <li>Add <code className="bg-red-500/20 px-1 py-0.5 rounded">OPENANALYST_API_KEY=sk-oa-v1-xxx</code> to <code className="bg-red-500/20 px-1 py-0.5 rounded">ui/.env.local</code></li>
                         <li>Restart the development server</li>
                       </ol>
