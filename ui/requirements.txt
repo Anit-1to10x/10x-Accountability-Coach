@@ -1,0 +1,42 @@
+# OpenAnalyst Accountability Coach - UI Dependencies
+# This file lists all required npm packages
+
+## Core Framework
+next@^14.0.0
+react@^18.2.0
+react-dom@^18.2.0
+
+## AI & API Integration
+@anthropic-ai/sdk@^0.30.0
+@google/generative-ai@^0.24.1
+
+## State Management
+zustand@^5.0.9
+
+## UI & Styling
+tailwindcss@^3.3.6
+autoprefixer@^10.4.16
+postcss@^8.4.32
+clsx@^2.0.0
+tailwind-merge@^2.1.0
+lucide-react@^0.294.0
+framer-motion@^10.16.0
+
+## File Handling & Utilities
+chokidar@^3.5.3
+gray-matter@^4.0.3
+date-fns@^2.30.0
+
+## Layout
+react-resizable-panels@^4.0.15
+
+## TypeScript & Type Definitions
+typescript@^5.3.0
+@types/node@^20.10.0
+@types/react@^18.2.0
+@types/react-dom@^18.2.0
+
+# Installation Instructions:
+# 1. Navigate to ui directory: cd ui
+# 2. Install all dependencies: npm install
+# 3. Start development server: npm run dev

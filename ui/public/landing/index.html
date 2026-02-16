@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>10X Accountability Coach - AI-Powered Personal Accountability System</title>
+  <meta name="description" content="Build lasting habits, crush your goals, and stay accountable with AI-powered coaching. Track streaks, get personalized insights, and achieve 10X productivity.">
+
+  <meta property="og:title" content="10X Accountability Coach">
+  <meta property="og:description" content="Your AI-powered personal accountability system">
+  <meta property="og:type" content="website">
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="#" class="logo">
+        <div class="logo-mark">10X</div>
+        <span class="logo-text">Accountability Coach</span>
+      </a>
+      <div class="nav-menu">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#installation" class="nav-link">Installation</a>
+        <a href="#why-claude-code" class="nav-link">Claude Code</a>
+        <a href="#faq" class="nav-link">FAQ</a>
+        <a href="/profiles" class="nav-btn">Launch App</a>
+      </div>
+      <button class="mobile-toggle" onclick="toggleMobileMenu()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-container">
+      <!-- Decorative SVG doodles -->
+      <svg class="doodle doodle-1" width="200" height="200" viewBox="0 0 200 200" fill="none">
+        <circle cx="100" cy="100" r="80" stroke="url(#grad1)" stroke-width="2" stroke-dasharray="10 5" opacity="0.4"/>
+        <circle cx="100" cy="100" r="50" stroke="url(#grad1)" stroke-width="1" opacity="0.2"/>
+        <defs>
+          <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#8b5cf6"/>
+            <stop offset="100%" style="stop-color:#3b82f6"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <svg class="doodle doodle-2" width="120" height="120" viewBox="0 0 120 120" fill="none">
+        <rect x="20" y="20" width="80" height="80" stroke="#22c55e" stroke-width="2" opacity="0.3" rx="8" transform="rotate(15 60 60)"/>
+      </svg>
+      <svg class="doodle doodle-3" width="100" height="100" viewBox="0 0 100 100" fill="none">
+        <polygon points="50,10 90,90 10,90" stroke="#f59e0b" stroke-width="2" fill="none" opacity="0.3"/>
+      </svg>
+
+      <!-- Badge -->
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        Free Beta Access
+      </div>
+
+      <!-- Main Headline -->
+      <h1 class="hero-title">
+        Your <span class="gradient-text">AI-powered</span> personal accountability system
+      </h1>
+
+      <!-- Subtitle -->
+      <p class="hero-subtitle">
+        Build lasting habits, crush your 30-day challenges, and stay accountable with intelligent coaching.
+        Get personalized insights, track your streaks, and achieve <strong>10X productivity</strong>.
+      </p>
+
+      <!-- CTA Buttons -->
+      <div class="hero-actions">
+        <a href="/profiles" class="btn btn-primary">
+          <span>Launch App</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+        <a href="#how-it-works" class="btn btn-ghost">
+          See How It Works
+        </a>
+      </div>
+
+      <!-- Stats -->
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-value">30+</span>
+          <span class="stat-label">Day Challenges</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value">20+</span>
+          <span class="stat-label">AI Skills</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value">100%</span>
+          <span class="stat-label">Privacy First</span>
+        </div>
+      </div>
+
+      <!-- App Preview -->
+      <div class="hero-preview">
+        <div class="app-window">
+          <div class="window-header">
+            <div class="window-dots">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <span class="window-title">10X Accountability Coach</span>
+            <div class="window-dots"></div>
+          </div>
+          <div class="window-content">
+            <div class="app-sidebar">
+              <div class="sidebar-item active">
+                <div class="item-icon"></div>
+                <div class="item-text"></div>
+              </div>
+              <div class="sidebar-item">
+                <div class="item-icon"></div>
+                <div class="item-text"></div>
+              </div>
+              <div class="sidebar-item">
+                <div class="item-icon"></div>
+                <div class="item-text"></div>
+              </div>
+            </div>
+            <div class="app-main">
+              <div class="streak-card">
+                <div class="streak-header">
+                  <span class="fire-icon">🔥</span>
+                  <div class="streak-info">
+                    <span class="streak-title">30-Day Challenge</span>
+                    <span class="streak-progress">Day 12 of 30</span>
+                  </div>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 40%"></div>
+                </div>
+              </div>
+              <div class="chat-preview">
+                <div class="chat-message ai">
+                  <span class="message-avatar">AI</span>
+                  <span class="message-text">Great progress! You're 40% through your challenge. Keep it up! 🔥</span>
+                </div>
+                <div class="chat-message user">
+                  <span class="message-text">What should I focus on today?</span>
+                </div>
+                <div class="chat-message ai">
+                  <span class="message-avatar">AI</span>
+                  <span class="message-text">Today's priority: Complete your morning routine checklist. You have 3 tasks remaining. Want me to break them down?</span>
+                </div>
+                <div class="chat-message user">
+                  <span class="message-text">Yes, help me stay accountable!</span>
+                </div>
+                <div class="chat-message ai" id="ai-response">
+                  <span class="message-avatar">AI</span>
+                  <span class="typing-indicator" id="typing-dots">
+                    <span></span><span></span><span></span>
+                  </span>
+                  <span class="message-text ai-typed-message" id="ai-typed-text" style="display: none;">Try it now! <a href="https://10x.in/dashboard" target="_blank" class="ai-link">Get your OpenAnalyst API Key</a> and claim your own <strong>10X Accountability Coach</strong> now 🚀</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Social Proof -->
+  <section class="social-proof">
+    <div class="container">
+      <p class="proof-label">Built for productivity enthusiasts</p>
+      <div class="proof-items">
+        <div class="proof-item">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span>Individuals</span>
+        </div>
+        <div class="proof-item">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          <span>Startups</span>
+        </div>
+        <div class="proof-item">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span>Teams</span>
+        </div>
+        <div class="proof-item">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span>Creators</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Features</span>
+        <h2 class="section-title">Everything you need to stay accountable</h2>
+        <p class="section-desc">Powerful tools designed to help you build habits, track progress, and achieve your goals.</p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Featured Card -->
+        <div class="feature-card featured">
+          <div class="feature-icon purple">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 16v-4M12 8h.01"/>
+            </svg>
+          </div>
+          <h3>AI-Powered Coaching</h3>
+          <p>Get personalized insights, motivation, and guidance from your AI accountability partner that learns your patterns.</p>
+          <div class="feature-demo">
+            <div class="demo-chat user">
+              <span class="demo-badge">You</span>
+              <p>I missed my workout yesterday. Feeling discouraged.</p>
+            </div>
+            <div class="demo-chat">
+              <span class="demo-badge">AI</span>
+              <p>One day doesn't define your journey! You've completed 5 days this week. Let's adjust today's goal to get back on track.</p>
+            </div>
+            <div class="demo-chat user">
+              <span class="demo-badge">You</span>
+              <p>You're right. What should I do today?</p>
+            </div>
+            <div class="demo-chat">
+              <span class="demo-badge">AI</span>
+              <p>Start with a 15-min walk to rebuild momentum. Small wins lead to big results!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Regular Cards -->
+        <div class="feature-card">
+          <div class="feature-icon orange">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+            </svg>
+          </div>
+          <h3>Streak Tracking</h3>
+          <p>Build momentum with visual streak tracking. Watch your progress grow day by day.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon cyan">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h3>Privacy First</h3>
+          <p>Your data stays on your machine. No cloud required. Full control over your information.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon green">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <h3>Progress Analytics</h3>
+          <p>Visualize your journey with detailed statistics and insights about your patterns.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon pink">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+          <h3>20+ AI Skills</h3>
+          <p>Access specialized skills for check-ins, motivation, scheduling, and more with slash commands.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works" class="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">How It Works</span>
+        <h2 class="section-title">Get started in minutes</h2>
+        <p class="section-desc">Simple setup, powerful results. Start your accountability journey today.</p>
+      </div>
+
+      <div class="steps-container">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Request Access</h3>
+            <p>Fill out the form to get your free beta access. We'll send you the download link within 24 hours.</p>
+          </div>
+        </div>
+
+        <div class="step-line"></div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Start a Challenge</h3>
+            <p>Choose from pre-built 30-day challenges or create your own. Set your goals and let AI guide you.</p>
+          </div>
+        </div>
+
+        <div class="step-line"></div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Stay Accountable</h3>
+            <p>Check in daily, track your streaks, and get AI-powered insights to keep you motivated.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Installation Section -->
+  <section id="installation" class="installation">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Quick Start</span>
+        <h2 class="section-title">Get up and running in seconds</h2>
+        <p class="section-desc">Choose your preferred installation method. We recommend using Claude Code for the best experience.</p>
+      </div>
+
+      <div class="install-options">
+        <!-- Claude Code Option (Recommended) -->
+        <div class="install-card featured">
+          <div class="install-badge">Recommended</div>
+          <div class="install-icon claude-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <h3>Claude Code Setup</h3>
+          <p class="install-desc">The smartest way to set up and customize your accountability coach. Claude Code can configure, modify, and enhance your app automatically.</p>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-label">Terminal</span>
+              <button class="copy-btn" onclick="copyCode(this, 'claude-code')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copy
+              </button>
+            </div>
+            <pre id="claude-code"><code># Clone and setup with Claude Code
+git clone https://github.com/Anit-1to10x/10x-Accountabilty-Coach.git
+cd 10x-Accoutability-Coach
+claude "start my app"</code></pre>
+          </div>
+
+          <ul class="install-benefits">
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Auto-configures API keys</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Installs all dependencies</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Customizes features on demand</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Debug and fix issues instantly</li>
+          </ul>
+        </div>
+
+        <!-- Manual Option -->
+        <div class="install-card">
+          <div class="install-icon manual-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 18 22 12 16 6"/>
+              <polyline points="8 6 2 12 8 18"/>
+            </svg>
+          </div>
+          <h3>Manual Setup</h3>
+          <p class="install-desc">Traditional setup for developers who prefer full control. Requires manual configuration of environment variables.</p>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-label">Terminal</span>
+              <button class="copy-btn" onclick="copyCode(this, 'manual-code')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copy
+              </button>
+            </div>
+            <pre id="manual-code"><code># Clone the repository
+git clone https://github.com/Anit-1to10x/10x-Accountabilty-Coach.git
+cd 10x-Accoutability-Coach
+
+# Install dependencies
+npm install && cd ui && npm install
+
+# Configure your API key
+cp ui/.env.example ui/.env.local
+# Edit ui/.env.local with your API key
+
+# Start the app
+npm run dev</code></pre>
+          </div>
+
+          <ul class="install-benefits muted">
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Full manual control</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Standard npm workflow</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Manual API key setup required</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> No AI-powered customization</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- API Key Section -->
+      <div class="api-key-section">
+        <div class="api-key-card">
+          <div class="api-key-icon">🔑</div>
+          <div class="api-key-content">
+            <h4>Get Your Free OpenAnalyst API Key</h4>
+            <p>Required for AI-powered coaching. Takes less than 30 seconds.</p>
+          </div>
+          <a href="https://10x.in/dashboard" target="_blank" class="btn btn-secondary">
+            Get API Key
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Claude Code Section -->
+  <section id="why-claude-code" class="why-claude-code">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Supercharge Your Setup</span>
+        <h2 class="section-title">Why use Claude Code?</h2>
+        <p class="section-desc">Claude Code transforms how you interact with your accountability coach. It's not just installation—it's intelligent customization.</p>
+      </div>
+
+      <div class="claude-features">
+        <div class="claude-feature-card">
+          <div class="feature-number">01</div>
+          <h3>One Command Setup</h3>
+          <p>Simply say <code>"start my app"</code> and Claude Code handles everything—installing dependencies, configuring API keys, and launching the server. No more reading documentation or troubleshooting setup issues.</p>
+        </div>
+
+        <div class="claude-feature-card">
+          <div class="feature-number">02</div>
+          <h3>Real-Time Customization</h3>
+          <p>Want a different color scheme? New features? Modified workflows? Just tell Claude Code what you want. Say <code>"add a meditation timer"</code> or <code>"change the theme to blue"</code> and watch it happen.</p>
+        </div>
+
+        <div class="claude-feature-card">
+          <div class="feature-number">03</div>
+          <h3>Instant Bug Fixes</h3>
+          <p>If something breaks, Claude Code can diagnose and fix issues immediately. No Stack Overflow searches, no debugging sessions—just describe the problem and let AI solve it.</p>
+        </div>
+
+        <div class="claude-feature-card">
+          <div class="feature-number">04</div>
+          <h3>Feature Development</h3>
+          <p>Build new features by describing what you want. <code>"Add a weekly summary email"</code> or <code>"Create a habit tracker widget"</code>—Claude Code writes, tests, and integrates the code for you.</p>
+        </div>
+
+        <div class="claude-feature-card">
+          <div class="feature-number">05</div>
+          <h3>Learning & Understanding</h3>
+          <p>Ask Claude Code to explain any part of the codebase. <code>"How does the streak system work?"</code> or <code>"What does this component do?"</code>—get detailed explanations instantly.</p>
+        </div>
+
+        <div class="claude-feature-card">
+          <div class="feature-number">06</div>
+          <h3>Continuous Improvement</h3>
+          <p>Your accountability coach evolves with you. As your needs change, Claude Code can add new challenges, modify existing features, or create entirely new workflows—all through natural conversation.</p>
+        </div>
+      </div>
+
+      <div class="claude-cta">
+        <div class="claude-cta-content">
+          <h3>Ready to experience the future of app customization?</h3>
+          <p>Install Claude Code and transform your 10X Accountability Coach into exactly what you need.</p>
+        </div>
+        <a href="https://claude.ai/download" target="_blank" class="btn btn-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download Claude Code
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slash Commands -->
+  <section class="commands">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Slash Commands</span>
+        <h2 class="section-title">Powerful skills at your fingertips</h2>
+        <p class="section-desc">Type a simple command and let AI handle the rest.</p>
+      </div>
+
+      <div class="commands-grid">
+        <div class="command-card">
+          <code>/streak</code>
+          <span>Daily check-in</span>
+        </div>
+        <div class="command-card">
+          <code>/streak-new</code>
+          <span>Start challenge</span>
+        </div>
+        <div class="command-card">
+          <code>/streak-stats</code>
+          <span>View statistics</span>
+        </div>
+        <div class="command-card">
+          <code>/motivation</code>
+          <span>Get motivated</span>
+        </div>
+        <div class="command-card">
+          <code>/schedule</code>
+          <span>Plan your day</span>
+        </div>
+        <div class="command-card">
+          <code>/vision</code>
+          <span>Vision boards</span>
+        </div>
+        <div class="command-card">
+          <code>/reflect</code>
+          <span>Weekly review</span>
+        </div>
+        <div class="command-card">
+          <code>/habits</code>
+          <span>Habit tracker</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="testimonials">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Testimonials</span>
+        <h2 class="section-title">Loved by productivity enthusiasts</h2>
+      </div>
+
+      <div class="testimonials-grid">
+        <div class="testimonial-card">
+          <div class="stars">★★★★★</div>
+          <p>"Finally, an accountability app that actually understands me. The AI coaching feels like having a personal mentor available 24/7."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">S</div>
+            <div class="author-info">
+              <span class="author-name">Sarah K.</span>
+              <span class="author-title">Entrepreneur</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="stars">★★★★★</div>
+          <p>"I've tried dozens of habit trackers. This is the first one that kept me engaged past week two. The streak system is addictive."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">M</div>
+            <div class="author-info">
+              <span class="author-name">Michael R.</span>
+              <span class="author-title">Developer</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="stars">★★★★★</div>
+          <p>"The slash commands make everything so fast. /streak to check in, /motivation when I need a boost. It's become part of my daily routine."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">A</div>
+            <div class="author-info">
+              <span class="author-name">Alex T.</span>
+              <span class="author-title">Creator</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section id="faq" class="faq">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">FAQ</span>
+        <h2 class="section-title">Frequently asked questions</h2>
+      </div>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-trigger" onclick="toggleFaq(this)">
+            <span>Is it really free?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="faq-content">
+            <p>Yes! During our beta period, 10X Accountability Coach is completely free. We're gathering feedback to make it even better. Premium features may be introduced later.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-trigger" onclick="toggleFaq(this)">
+            <span>How does the AI coaching work?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="faq-content">
+            <p>Our AI analyzes your check-ins, progress patterns, and goals to provide personalized guidance. It learns your habits over time and adapts its coaching style to what works best for you.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-trigger" onclick="toggleFaq(this)">
+            <span>What kind of challenges can I create?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="faq-content">
+            <p>Anything! Fitness goals, learning new skills, building habits, creative projects, or business objectives. You can use our pre-built 30-day templates or create fully custom challenges.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-trigger" onclick="toggleFaq(this)">
+            <span>Is my data private?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="faq-content">
+            <p>Absolutely. Your data is stored locally on your machine by default. We don't sell or share your personal information. You own your data completely.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-trigger" onclick="toggleFaq(this)">
+            <span>How do I get support?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="faq-content">
+            <p>Email us at support@1to10x.com for any questions or issues. We typically respond within 24 hours. Beta users get priority support.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section id="get-access" class="cta">
+    <div class="container">
+      <div class="cta-box">
+        <div class="cta-content">
+          <h2>Ready to become more accountable?</h2>
+          <p>Start your first 30-day challenge today. Completely free, no signup required.</p>
+        </div>
+
+        <div class="cta-actions">
+          <a href="/profiles" class="btn btn-primary btn-full">
+            <span>Start Now - It's Free</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </a>
+          <p class="form-note">No credit card required. No signup needed. Just start!</p>
+        </div>
+
+        <div class="cta-features">
+          <div class="cta-feature">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>AI-Powered Coaching</span>
+          </div>
+          <div class="cta-feature">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>30-Day Challenges</span>
+          </div>
+          <div class="cta-feature">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>Streak Tracking</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-main">
+        <div class="footer-brand">
+          <a href="#" class="logo">
+            <div class="logo-mark">10X</div>
+            <span class="logo-text">Accountability Coach</span>
+          </a>
+          <p>Your AI-powered personal accountability system. Build habits, track progress, achieve goals.</p>
+        </div>
+
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Product</h4>
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How It Works</a>
+            <a href="#faq">FAQ</a>
+          </div>
+          <div class="footer-col">
+            <h4>Contact</h4>
+            <a href="mailto:support@1to10x.com">support@1to10x.com</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 10X Accountability Coach. All rights reserved.</p>
+        <p>Developed by <strong>Team 10X</strong> | Powered by <strong>OpenAnalyst</strong></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

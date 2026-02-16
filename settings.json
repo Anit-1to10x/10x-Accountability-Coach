@@ -1,0 +1,43 @@
+{
+  "name": "OpenAnalyst-Accountability-Coach",
+  "owner": {
+    "name": "OpenAnalyst",
+    "email": "support@openanalyst.com"
+  },
+  "metadata": {
+    "description": "OpenAnalyst Accountability Coach - Your Personal AI-Powered Accountability System with Dynamic Coaching",
+    "version": "2.0.0",
+    "homepage": "https://github.com/openanalyst/accountability-coach"
+  },
+  "plugins": [
+    {
+      "name": "OA-Deckling",
+      "description": "Generate professional PPTX presentations using Anthropic Platform Skills API",
+      "source": "./plugins/deckling"
+    },
+    {
+      "name": "OA-Accountability-Suite",
+      "description": "Complete accountability system with dynamic coaching, commitment contracts, and intelligent tracking",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/user-onboarding",
+        "./skills/challenge-onboarding",
+        "./skills/streak",
+        "./skills/daily-checkin",
+        "./skills/motivation",
+        "./skills/schedule-replanner",
+        "./skills/punishment",
+        "./skills/excalidraw"
+      ],
+      "commands": [
+        "./commands/streak.md",
+        "./commands/streak-new.md",
+        "./commands/streak-list.md",
+        "./commands/streak-switch.md",
+        "./commands/streak-stats.md",
+        "./commands/streak-insights.md"
+      ]
+    }
+  ]
+}

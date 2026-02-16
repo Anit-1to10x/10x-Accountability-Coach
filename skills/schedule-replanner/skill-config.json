@@ -1,0 +1,28 @@
+{
+  "skill_id": "oa-schedule-replanner",
+  "skill_name": "OpenAnalyst Schedule Replanner",
+  "version": "1.0.0",
+  "description": "OpenAnalyst Accountability Coach - Intelligent schedule adjustment when life happens, with goal protection",
+  "author": "OpenAnalyst",
+  "parent": "OpenAnalyst-Accountability-Coach",
+  "category": "planning",
+  "tags": ["schedule", "replan", "adjust", "flexibility", "time-management"],
+  "triggers": [
+    "need to replan",
+    "schedule change",
+    "can't make it",
+    "life happened",
+    "reschedule"
+  ],
+  "config": {
+    "data_dir": "data/schedule",
+    "max_replans_per_week": 2,
+    "protect_streaks": true,
+    "require_justification": true
+  },
+  "dependencies": [
+    "oa-user-onboarding",
+    "oa-streak",
+    "oa-punishment"
+  ]
+}

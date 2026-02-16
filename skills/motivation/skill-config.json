@@ -1,0 +1,26 @@
+{
+  "skill_id": "oa-motivation",
+  "skill_name": "OpenAnalyst Motivation Generator",
+  "version": "1.0.0",
+  "description": "OpenAnalyst Accountability Coach - Context-aware motivation and encouragement based on user's triggers and current state",
+  "author": "OpenAnalyst",
+  "parent": "OpenAnalyst-Accountability-Coach",
+  "category": "motivation",
+  "tags": ["motivation", "encouragement", "mindset", "inspiration", "coaching"],
+  "triggers": [
+    "need motivation",
+    "feeling down",
+    "struggling",
+    "unmotivated",
+    "inspire me"
+  ],
+  "config": {
+    "data_dir": "data/motivation",
+    "personalized": true,
+    "quote_sources": ["user_goals", "past_wins", "role_models"],
+    "avoid_generic": true
+  },
+  "dependencies": [
+    "oa-user-onboarding"
+  ]
+}

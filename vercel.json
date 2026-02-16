@@ -1,0 +1,59 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "name": "10x-accountability-coach",
+  "framework": "nextjs",
+  "buildCommand": "cd ui && npm run build",
+  "installCommand": "cd ui && npm install",
+  "outputDirectory": "ui/.next",
+  "public": true,
+  "regions": ["iad1"],
+  "functions": {
+    "ui/app/api/**/*.ts": {
+      "maxDuration": 60
+    }
+  },
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/landing",
+      "dest": "/landing/index.html"
+    },
+    {
+      "src": "/landing/(.*)",
+      "dest": "/landing/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" }
+      ]
+    },
+    {
+      "source": "/landing/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ],
+  "env": {
+    "OPENANALYST_API_URL": "@openanalyst_api_url",
+    "OPENANALYST_API_KEY": "@openanalyst_api_key",
+    "OPENANALYST_MODEL": "@openanalyst_model"
+  }
+}

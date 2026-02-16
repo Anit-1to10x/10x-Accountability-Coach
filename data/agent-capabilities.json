@@ -1,0 +1,145 @@
+{
+  "agents": {
+    "unified": {
+      "agentId": "unified",
+      "assignedSkills": [
+        "streak",
+        "daily-checkin",
+        "smart-scheduler",
+        "motivation",
+        "planning",
+        "weekly-review",
+        "monthly-review"
+      ],
+      "assignedPrompts": [
+        "accountability",
+        "celebration",
+        "evening-review",
+        "morning-checkin",
+        "motivation",
+        "planning",
+        "stuck",
+        "goal-decomposition",
+        "daily-priority",
+        "weekly-review",
+        "habit-design",
+        "obstacle-analysis",
+        "time-blocking",
+        "energy-management",
+        "decision-making",
+        "fear-analysis",
+        "procrastination-buster",
+        "streak-recovery",
+        "milestone-celebration",
+        "focus-session",
+        "mindset-shift",
+        "quick-win",
+        "end-of-day",
+        "weekly-planning",
+        "overwhelm-relief",
+        "gratitude-practice",
+        "project-kickoff",
+        "skill-gap-analysis",
+        "failure-debrief",
+        "tomorrow-prep",
+        "career-strategy",
+        "ai-agents-guide",
+        "rag-vectors-guide",
+        "vibe-coding",
+        "influencer-marketing",
+        "ai-operations",
+        "executive-strategy",
+        "networking-strategy",
+        "problem-solving",
+        "monthly-review",
+        "research-analysis",
+        "communication-skills",
+        "job-search-strategy",
+        "it-operations",
+        "ai-business-strategy",
+        "ai-era-mindset",
+        "ai-manufacturing",
+        "learning-plan",
+        "smart-goals",
+        "upskilling-path",
+        "startup-guide"
+      ],
+      "personality": {
+        "tone": "balanced",
+        "style": "supportive, encouraging, and honest. Focus on actionable advice."
+      },
+      "restrictions": {
+        "allowOnlyAssigned": false,
+        "blockedTopics": []
+      },
+      "updatedAt": "2025-01-19T00:00:00.000Z"
+    },
+    "accountability-coach": {
+      "agentId": "accountability-coach",
+      "assignedSkills": [
+        "streak",
+        "daily-checkin",
+        "smart-scheduler"
+      ],
+      "assignedPrompts": [
+        "accountability",
+        "motivation",
+        "planning",
+        "goal-decomposition",
+        "daily-priority",
+        "habit-design",
+        "procrastination-buster",
+        "streak-recovery",
+        "focus-session",
+        "quick-win",
+        "tomorrow-prep",
+        "smart-goals"
+      ],
+      "systemPrompt": "You are a dedicated accountability coach. Your primary focus is helping users track their progress, maintain streaks, and stay committed to their goals. Be encouraging but hold them accountable.",
+      "personality": {
+        "tone": "balanced",
+        "style": "encouraging but honest. Celebrate wins while pushing for growth."
+      },
+      "restrictions": {
+        "allowOnlyAssigned": true,
+        "blockedTopics": []
+      },
+      "updatedAt": "2025-01-19T00:00:00.000Z"
+    },
+    "todo-assistant": {
+      "agentId": "todo-assistant",
+      "assignedSkills": [
+        "planning",
+        "daily-checkin"
+      ],
+      "assignedPrompts": [
+        "planning",
+        "daily-priority",
+        "time-blocking",
+        "quick-win",
+        "tomorrow-prep",
+        "goal-decomposition"
+      ],
+      "systemPrompt": "You are an AI todo assistant. Help users break down their goals into actionable tasks, prioritize work, and create realistic plans. Always provide structured todo suggestions in JSON format.",
+      "personality": {
+        "tone": "balanced",
+        "style": "helpful, practical, and focused on action. Keep suggestions specific and achievable."
+      },
+      "restrictions": {
+        "allowOnlyAssigned": false,
+        "blockedTopics": []
+      },
+      "updatedAt": "2025-01-19T00:00:00.000Z"
+    }
+  },
+  "globalDefaults": {
+    "defaultSkills": [
+      "streak",
+      "daily-checkin"
+    ],
+    "defaultPrompts": [
+      "motivation",
+      "accountability"
+    ]
+  }
+}

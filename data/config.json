@@ -1,0 +1,27 @@
+{
+  "app": {
+    "name": "10x Accountability Coach",
+    "version": "1.1.0",
+    "owner": null,
+    "accountType": "personal",
+    "defaultProfile": null
+  },
+  "features": {
+    "multiProfile": true,
+    "familyMode": false,
+    "ownerCanManageAll": true
+  },
+  "profiles": {
+    "default": null,
+    "owner": null,
+    "members": []
+  },
+  "challenges": {},
+  "settings": {
+    "autoSelectOwnerProfile": true,
+    "showFamilyDashboard": false,
+    "timezone": "auto"
+  },
+  "dataSource": "local",
+  "lastUpdated": null
+}

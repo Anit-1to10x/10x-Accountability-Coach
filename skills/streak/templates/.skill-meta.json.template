@@ -1,0 +1,28 @@
+{
+  "instance_id": "{{INSTANCE_ID}}",
+  "skill_id": "streak",
+  "challenge_name": "{{CHALLENGE_NAME}}",
+  "challenge_slug": "{{CHALLENGE_SLUG}}",
+  "challenge_type": "{{CHALLENGE_TYPE}}",
+  "created_at": "{{CREATED_AT}}",
+  "updated_at": "{{UPDATED_AT}}",
+  "status": "active",
+  "cadence": "{{CADENCE}}",
+  "streak": {
+    "current": 0,
+    "longest": 0,
+    "total_checkins": 0,
+    "last_checkin": null
+  },
+  "stats": {
+    "total_time_minutes": 0,
+    "average_session_minutes": 0,
+    "completion_percentage": 0
+  },
+  "preferences": {
+    "preferred_time": "{{PREFERRED_TIME}}",
+    "session_duration_minutes": {{SESSION_DURATION}},
+    "reminder_enabled": true,
+    "streak_grace_period_hours": 36
+  }
+}

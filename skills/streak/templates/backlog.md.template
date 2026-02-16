@@ -1,0 +1,52 @@
+# {{CHALLENGE_NAME}} - Backlog
+
+> Items to tackle in future sessions
+
+---
+
+## Priority Queue
+
+### 🔴 High Priority
+<!-- Must do soon - blocking progress or time-sensitive -->
+- [ ] {{HIGH_PRIORITY_ITEM}}
+
+### 🟡 Medium Priority
+<!-- Important but not urgent -->
+- [ ] {{MEDIUM_PRIORITY_ITEM}}
+
+### 🟢 Low Priority
+<!-- Nice to have, do when time permits -->
+- [ ] {{LOW_PRIORITY_ITEM}}
+
+---
+
+## Ideas & Explorations
+<!-- Things to research or try later -->
+- {{IDEA_1}}
+- {{IDEA_2}}
+
+---
+
+## Blocked Items
+<!-- Items waiting on something external -->
+| Item | Blocked By | Since |
+|------|------------|-------|
+| {{BLOCKED_ITEM}} | {{BLOCKER}} | {{DATE}} |
+
+---
+
+## Completed (Recently)
+<!-- Move items here when done, archive weekly -->
+- [x] ~~{{COMPLETED_ITEM}}~~ - {{COMPLETION_DATE}}
+
+---
+
+## Archive
+<!-- Old completed items, collapsed for reference -->
+<details>
+<summary>View archived items</summary>
+
+### Week of {{ARCHIVE_WEEK}}
+- [x] {{ARCHIVED_ITEM}}
+
+</details>

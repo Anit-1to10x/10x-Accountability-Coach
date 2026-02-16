@@ -1,0 +1,89 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Next.js
+ui/.next/
+ui/out/
+.next/
+out/
+
+# Production
+build/
+dist/
+
+# Environment
+.env
+.env.local
+.env*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# User data (IMPORTANT: Don't commit personal data)
+.openanalyst/
+.openanalyst-data/
+.streak/
+
+# Setup tracking (local to each user's machine)
+.setup-log.json
+
+# User-specific data folders (created at runtime, not in repo)
+data/profiles/
+data/todos/
+data/checkins/
+data/chats/
+data/agents/
+data/.registry/
+data/.responses/
+data/.cache-index.json
+
+# Track these data files (NOT ignored):
+# data/agents.json - Agent registry
+# data/agent-capabilities.json - Agent capabilities
+# data/config.json - App config
+# data/challenges/ - Challenge templates
+
+# Claude Code local settings (contains secrets)
+.claude/settings.local.json
+.claude/projects/
+.claude/mcp.json
+.claude/.ck.json
+.claude/.ckignore
+.claude/statusline.*
+
+# Track these Claude Code files (NOT ignored):
+# .claude/commands/ - Slash commands for CLI
+# .claude/instructions.md - Startup instructions
+
+# MCP config with secrets
+data/mcp-config.json
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Premium features (not included in public repo)
+premium-white-label-kit/
+premium-white-label-kit.zip
+white-label/
+*.white-label.*
+
+# Misc
+.turbo
+.vercel
+nul

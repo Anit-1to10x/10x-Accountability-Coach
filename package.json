@@ -1,0 +1,52 @@
+{
+  "name": "10X-accountability-coach",
+  "version": "1.1.0",
+  "description": "Your Personal AI-Powered Accountability Coach by Team 10X",
+  "main": "lib/index.js",
+  "scripts": {
+    "start": "node scripts/start-all.js",
+    "setup": "node scripts/setup.js",
+    "init": "node scripts/init.js",
+    "install-plugin": "node scripts/install-plugin.js",
+    "dev": "cd ui && npm run dev",
+    "build": "cd ui && npm run build",
+    "test": "node --test lib/**/*.test.js",
+    "seed": "node scripts/generate-sample-data.js",
+    "generate-challenge": "node scripts/generate-challenge-data.js",
+    "query": "node claude-query.js",
+    "postinstall": "cd ui && npm install"
+  },
+  "keywords": [
+    "accountability",
+    "claude-code",
+    "productivity",
+    "habits",
+    "streak",
+    "challenges",
+    "coaching"
+  ],
+  "author": {
+    "name": "Team 10X",
+    "email": "team@10x.coach"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anit-1to10x/10x-Accountabilty-Coach.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "lib/",
+    "skills/",
+    "commands/",
+    "plugins/",
+    "scripts/",
+    "settings.json"
+  ],
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "ws": "^8.18.3"
+  }
+}
